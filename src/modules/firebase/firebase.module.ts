@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
     {
       provide: 'FirebaseAdmin',
       useFactory: (configService: ConfigService) => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const serviceAccount = require(
           configService.get<string>('PATH_TO_SERVICE_ACCOUNT_KEY'),
         );
