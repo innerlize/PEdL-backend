@@ -7,10 +7,10 @@ import {
   Delete,
   Patch,
 } from '@nestjs/common';
-import { ProjectsService } from '../services/projects.service';
-import { CreateProjectDto } from '../../application/dtos/create-project.dto';
-import { Project } from '../../domain/interfaces/project.interface';
-import { UpdateProjectDto } from '../../application/dtos/update-project.dto';
+import { ProjectsService } from '../application/services/projects.service';
+import { CreateProjectDto } from '../application/dtos/create-project.dto';
+import { Project } from '../domain/interfaces/project.interface';
+import { UpdateProjectDto } from '../application/dtos/update-project.dto';
 
 @Controller('api/projects')
 export class ProjectsController {
