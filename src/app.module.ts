@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { FirebaseModule } from './modules/firebase/firebase.module';
+import { DatabaseModule } from './modules/database/database.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -9,7 +9,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    FirebaseModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
