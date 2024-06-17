@@ -1,7 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { DatabaseRepository } from '../../../../common/domain/database-repository.interface';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FirebaseRepository<T> implements DatabaseRepository<T> {
@@ -13,29 +17,70 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
     this.firestore = this.firebaseAdmin.firestore();
   }
 
-  async findAll(collectionName: string): Promise<T[]> {
-    const snapshot = await this.firestore.collection(collectionName).get();
-    return snapshot.docs.map((doc) => doc.data() as T);
+  async findAll(collectionName: string): Promise<(T & { id: string })[]> {
+    try {
+      const snapshot = await this.firestore.collection(collectionName).get();
+
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as T),
+      }));
+    } catch (e) {
+      throw new BadRequestException('Error getting collection: ' + e.message);
+    }
   }
 
   async findById(collectionName: string, id: string): Promise<T> {
     const doc = await this.firestore.collection(collectionName).doc(id).get();
-    return doc.data() as T;
+
+    if (!doc.exists) {
+      throw new NotFoundException(`Document with id ${id} not found`);
+    }
+
+    return { id: doc.id, ...doc.data() } as T;
   }
 
-  async create(collectionName: string, data: T): Promise<string> {
-    const id = uuidv4();
-    await this.firestore.collection(collectionName).add({ ...data, id });
-    return 'Document successfully created!';
+  async create(collectionName: string, data: any): Promise<string> {
+    try {
+      await this.firestore.collection(collectionName).add(data);
+
+      return 'Document successfully created!';
+    } catch (e) {
+      throw new BadRequestException('Error creating document: ' + e.message);
+    }
   }
 
-  async update(collectionName: string, id: string, data: T): Promise<string> {
-    await this.firestore.collection(collectionName).doc(id).set(data);
-    return `Document with id: ${id} successfully updated!`;
+  async update(collectionName: string, id: string, data: any): Promise<string> {
+    try {
+      const docRef = this.firestore.collection(collectionName).doc(id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new NotFoundException(`Document with id ${id} not found`);
+      }
+
+      await docRef.update(data);
+
+      return `Document with id: ${id} successfully updated!`;
+    } catch (e) {
+      throw new BadRequestException('Error updating document: ' + e.message);
+    }
   }
 
   async delete(collectionName: string, id: string): Promise<string> {
-    await this.firestore.collection(collectionName).doc(id).delete();
-    return `Document with id: ${id} successfully deleted!`;
+    try {
+      const docRef = this.firestore.collection(collectionName).doc(id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new NotFoundException(`Document with id ${id} not found`);
+      }
+
+      await docRef.delete();
+
+      return `Document with id: ${id} successfully deleted!`;
+    } catch (e) {
+      throw new BadRequestException('Error deleting document: ' + e.message);
+    }
   }
 }
