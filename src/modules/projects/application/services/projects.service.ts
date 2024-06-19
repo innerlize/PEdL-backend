@@ -3,6 +3,7 @@ import { CreateProjectDto } from '../dtos/create-project.dto';
 import { Project } from '../../domain/interfaces/project.interface';
 import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
+import { CustomResponse } from 'src/common/domain/custom-response';
 
 @Injectable()
 export class ProjectsService {
@@ -14,32 +15,57 @@ export class ProjectsService {
   ) {}
 
   async getAllProjects(): Promise<Project[]> {
-    return this.databaseRepository.findAll(this.collectionName);
+    return await this.databaseRepository.findAll(this.collectionName);
   }
 
   async getProject(id: string): Promise<Project> {
-    return this.databaseRepository.findById(this.collectionName, id);
+    return await this.databaseRepository.findById(this.collectionName, id);
   }
 
-  async createProject(createProjectDto: CreateProjectDto): Promise<string> {
-    return this.databaseRepository.create(
+  async createProject(
+    createProjectDto: CreateProjectDto,
+  ): Promise<CustomResponse> {
+    const createdProject = await this.databaseRepository.create(
       this.collectionName,
       createProjectDto,
     );
+
+    const response: CustomResponse = {
+      message: 'Project successfully created!',
+      status: 200,
+      data: createdProject,
+    };
+
+    return response;
   }
 
   async updateProject(
     id: string,
     updateProjectDto: UpdateProjectDto,
-  ): Promise<string> {
-    return this.databaseRepository.update(
+  ): Promise<CustomResponse> {
+    const updatedProject = await this.databaseRepository.update(
       this.collectionName,
       id,
       updateProjectDto,
     );
+
+    const response: CustomResponse = {
+      message: `Project with id "${id}" successfully updated!`,
+      status: 200,
+      data: updatedProject,
+    };
+
+    return response;
   }
 
-  async deleteProject(id: string): Promise<string> {
-    return this.databaseRepository.delete(this.collectionName, id);
+  async deleteProject(id: string): Promise<CustomResponse> {
+    await this.databaseRepository.delete(this.collectionName, id);
+
+    const response: CustomResponse = {
+      message: `Project with id "${id}" successfully deleted!`,
+      status: 200,
+    };
+
+    return response;
   }
 }
