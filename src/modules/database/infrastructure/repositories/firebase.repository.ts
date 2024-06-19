@@ -17,14 +17,17 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
     this.firestore = this.firebaseAdmin.firestore();
   }
 
-  async findAll(collectionName: string): Promise<(T & { id: string })[]> {
+  async findAll(collectionName: string): Promise<T[]> {
     try {
       const snapshot = await this.firestore.collection(collectionName).get();
 
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as T),
-      }));
+      return snapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as T,
+      );
     } catch (e) {
       throw new BadRequestException('Error getting collection: ' + e.message);
     }
@@ -40,17 +43,18 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
     return { id: doc.id, ...doc.data() } as T;
   }
 
-  async create(collectionName: string, data: any): Promise<string> {
+  async create(collectionName: string, data: any): Promise<T> {
     try {
-      await this.firestore.collection(collectionName).add(data);
+      const docRef = await this.firestore.collection(collectionName).add(data);
+      const doc = await docRef.get();
 
-      return 'Document successfully created!';
+      return { id: doc.id, ...doc.data() } as T;
     } catch (e) {
       throw new BadRequestException('Error creating document: ' + e.message);
     }
   }
 
-  async update(collectionName: string, id: string, data: any): Promise<string> {
+  async update(collectionName: string, id: string, data: any): Promise<T> {
     try {
       const docRef = this.firestore.collection(collectionName).doc(id);
       const doc = await docRef.get();
@@ -61,13 +65,15 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
 
       await docRef.update(data);
 
-      return `Document with id: ${id} successfully updated!`;
+      const updatedDoc = await docRef.get();
+
+      return { id: updatedDoc.id, ...updatedDoc.data() } as T;
     } catch (e) {
       throw new BadRequestException('Error updating document: ' + e.message);
     }
   }
 
-  async delete(collectionName: string, id: string): Promise<string> {
+  async delete(collectionName: string, id: string): Promise<void> {
     try {
       const docRef = this.firestore.collection(collectionName).doc(id);
       const doc = await docRef.get();
@@ -77,8 +83,6 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
       }
 
       await docRef.delete();
-
-      return `Document with id: ${id} successfully deleted!`;
     } catch (e) {
       throw new BadRequestException('Error deleting document: ' + e.message);
     }
