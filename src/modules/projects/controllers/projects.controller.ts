@@ -11,6 +11,7 @@ import { ProjectsService } from '../application/services/projects.service';
 import { CreateProjectDto } from '../application/dtos/create-project.dto';
 import { Project } from '../domain/interfaces/project.interface';
 import { UpdateProjectDto } from '../application/dtos/update-project.dto';
+import { CustomResponse } from 'src/common/domain/custom-response';
 
 @Controller('api/projects')
 export class ProjectsController {
@@ -18,31 +19,31 @@ export class ProjectsController {
 
   @Get('/')
   async getAllProjects(): Promise<Project[]> {
-    return this.projectsService.getAllProjects();
+    return await this.projectsService.getAllProjects();
   }
 
   @Get('/:id')
   async getProject(@Param('id') id: string): Promise<Project> {
-    return this.projectsService.getProject(id);
+    return await this.projectsService.getProject(id);
   }
 
   @Post('/')
   async createProject(
     @Body() createProjectDto: CreateProjectDto,
-  ): Promise<string> {
-    return this.projectsService.createProject(createProjectDto);
+  ): Promise<{ message: string }> {
+    return await this.projectsService.createProject(createProjectDto);
   }
 
   @Patch('/:id')
   async updateProject(
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
-  ): Promise<string> {
-    return this.projectsService.updateProject(id, updateProjectDto);
+  ): Promise<CustomResponse> {
+    return await this.projectsService.updateProject(id, updateProjectDto);
   }
 
   @Delete('/:id')
-  async deleteProject(@Param('id') id: string): Promise<string> {
-    return this.projectsService.deleteProject(id);
+  async deleteProject(@Param('id') id: string): Promise<CustomResponse> {
+    return await this.projectsService.deleteProject(id);
   }
 }
