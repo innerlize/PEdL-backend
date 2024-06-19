@@ -34,7 +34,7 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
     const doc = await this.firestore.collection(collectionName).doc(id).get();
 
     if (!doc.exists) {
-      throw new NotFoundException(`Document with id ${id} not found`);
+      throw new NotFoundException(`Document with id "${id}" not found`);
     }
 
     return { id: doc.id, ...doc.data() } as T;
@@ -56,7 +56,7 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
       const doc = await docRef.get();
 
       if (!doc.exists) {
-        throw new NotFoundException(`Document with id ${id} not found`);
+        throw new NotFoundException(`Document with id "${id}" not found`);
       }
 
       await docRef.update(data);
@@ -73,7 +73,7 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
       const doc = await docRef.get();
 
       if (!doc.exists) {
-        throw new NotFoundException(`Document with id ${id} not found`);
+        throw new NotFoundException(`Document with id "${id}" not found`);
       }
 
       await docRef.delete();
