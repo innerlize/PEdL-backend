@@ -84,7 +84,11 @@ describe('ProjectsController', () => {
       end_date: new Date('2024-12-31'),
     };
 
-    const result = 'Project created successfully';
+    const result = {
+      message: 'Project successfully created!',
+      status: 201,
+      data: createProjectDto,
+    };
 
     jest.spyOn(service, 'createProject').mockResolvedValue(result);
 
@@ -96,7 +100,11 @@ describe('ProjectsController', () => {
 
     const updateProjectDto: UpdateProjectDto = { name: 'Updated Project' };
 
-    const result = 'Project updated successfully';
+    const result = {
+      message: `Project with id "${id}" successfully updated!`,
+      status: 200,
+      data: updateProjectDto,
+    };
 
     jest.spyOn(service, 'updateProject').mockResolvedValue(result);
 
@@ -106,7 +114,10 @@ describe('ProjectsController', () => {
   it('should delete a project', async () => {
     const id = '1';
 
-    const result = 'Project deleted successfully';
+    const result = {
+      message: `Project with id "${id}" successfully deleted!`,
+      status: 200,
+    };
 
     jest.spyOn(service, 'deleteProject').mockResolvedValue(result);
 
