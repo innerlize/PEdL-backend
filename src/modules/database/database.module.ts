@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { FirebaseService } from './services/firebase.service';
+import { FirebaseRepository } from './infrastructure/repositories/firebase.repository';
 import { ConfigService } from '@nestjs/config';
 
 @Module({
@@ -12,18 +12,18 @@ import { ConfigService } from '@nestjs/config';
         const serviceAccount = require(
           configService.get<string>('PATH_TO_SERVICE_ACCOUNT_KEY'),
         );
-
         const app = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
         });
-
         return app;
       },
-
       inject: [ConfigService],
     },
-    FirebaseService,
+    {
+      provide: 'DatabaseRepository',
+      useClass: FirebaseRepository,
+    },
   ],
-  exports: [FirebaseService],
+  exports: ['DatabaseRepository'],
 })
-export class FirebaseModule {}
+export class DatabaseModule {}
