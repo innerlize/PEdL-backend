@@ -82,10 +82,8 @@ describe('ProjectsService (integration)', () => {
           }),
         ]),
       );
-    });
   });
 
-  describe('getProject', () => {
     it('should return a project by ID', async () => {
       const projectId = '1';
       const project: Project = {
@@ -117,10 +115,8 @@ describe('ProjectsService (integration)', () => {
           start_date: expect.any(String),
         }),
       );
-    });
   });
 
-  describe('createProject', () => {
     it('should create a new project', async () => {
       const projectId = '1';
       const createProjectDto: CreateProjectDto = {
@@ -161,10 +157,8 @@ describe('ProjectsService (integration)', () => {
           }),
         }),
       );
-    });
   });
 
-  describe('updateProject', () => {
     it('should update an existing project', async () => {
       const createProjectDto: CreateProjectDto = {
         name: 'Project 1',
@@ -218,10 +212,8 @@ describe('ProjectsService (integration)', () => {
           }),
         }),
       );
-    });
   });
 
-  describe('deleteProject', () => {
     it('should delete an existing project', async () => {
       const createProjectDto: CreateProjectDto = {
         name: 'Project 1',
@@ -257,6 +249,5 @@ describe('ProjectsService (integration)', () => {
         }),
       );
       expect(response.body).not.toHaveProperty('data', expect.any(Object));
-    });
   });
 });
