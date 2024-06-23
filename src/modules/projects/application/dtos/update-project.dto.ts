@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaDto } from './media.dto';
-import { LinkDto } from './link.dto';
+import { LinkDto } from '../../../../common/application/dtos/link.dto';
 
 export class UpdateProjectDto {
   @IsOptional()
