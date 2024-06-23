@@ -41,7 +41,10 @@ describe('ProjectsService (integration)', () => {
     jest.clearAllMocks();
   });
 
-  describe('getAllProjects', () => {
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
     it('should return an array of projects', async () => {
       const projects: Project[] = [
         {
