@@ -1,4 +1,4 @@
-import { Link } from './link.interface';
+import { Link } from '../../../../common/domain/link.interface';
 import { Media } from './media.interface';
 
 export interface Project {
