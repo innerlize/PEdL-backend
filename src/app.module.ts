@@ -9,6 +9,7 @@ import { PartnersModule } from './modules/partners/partners.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: `src/common/config/env/${process.env.NODE_ENV}.env`,
       isGlobal: true,
     }),
     DatabaseModule,
