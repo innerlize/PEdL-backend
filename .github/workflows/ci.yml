@@ -37,5 +37,5 @@ jobs:
       - name: Run Prettier
         run: npm run format
 
-      - name: Run tests with coverage
-        run: npm run test:cov
+      - name: Run tests with Firestore emulator
+        run: npm run test:with-emulator
