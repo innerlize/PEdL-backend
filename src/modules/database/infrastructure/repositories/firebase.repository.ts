@@ -25,6 +25,8 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
         (doc) =>
           ({
             id: doc.id,
+            created_at: doc.createTime,
+            updated_at: doc.updateTime,
             ...doc.data(),
           }) as T,
       );
@@ -40,7 +42,12 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
       throw new NotFoundException(`Document with id "${id}" not found`);
     }
 
-    return { id: doc.id, ...doc.data() } as T;
+    return {
+      id: doc.id,
+      created_at: doc.createTime,
+      updated_at: doc.updateTime,
+      ...doc.data(),
+    } as T;
   }
 
   async create(collectionName: string, data: any): Promise<T> {
@@ -48,7 +55,12 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
       const docRef = await this.firestore.collection(collectionName).add(data);
       const doc = await docRef.get();
 
-      return { id: doc.id, ...doc.data() } as T;
+      return {
+        id: doc.id,
+        created_at: doc.createTime,
+        updated_at: doc.updateTime,
+        ...doc.data(),
+      } as T;
     } catch (e) {
       throw new BadRequestException('Error creating document: ' + e.message);
     }
@@ -67,7 +79,12 @@ export class FirebaseRepository<T> implements DatabaseRepository<T> {
 
       const updatedDoc = await docRef.get();
 
-      return { id: updatedDoc.id, ...updatedDoc.data() } as T;
+      return {
+        id: updatedDoc.id,
+        created_at: doc.createTime,
+        updated_at: doc.updateTime,
+        ...updatedDoc.data(),
+      } as T;
     } catch (e) {
       throw new BadRequestException('Error updating document: ' + e.message);
     }
