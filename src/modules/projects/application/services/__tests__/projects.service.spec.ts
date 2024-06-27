@@ -122,6 +122,13 @@ describe('ProjectsService', () => {
           }),
         );
       });
+
+    await request(app.getHttpServer())
+      .get(`/api/projects`)
+      .then((res) => {
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(1);
+      });
   });
 
   it('should create a project', async () => {
