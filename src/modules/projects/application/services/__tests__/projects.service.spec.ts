@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsService } from '../projects.service';
+import * as request from 'supertest';
+import { ProjectsController } from '../../../controllers/projects.controller';
+import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from '../../../../database/database.module';
 import { CreateProjectDto } from '../../dtos/create-project.dto';
 import { UpdateProjectDto } from '../../dtos/update-project.dto';
-import * as request from 'supertest';
-import { Project } from '../../../domain/interfaces/project.interface';
-import { ProjectsController } from '../../../controllers/projects.controller';
+import { clearDataInEmulator } from '../../../../../utils/clear-data-in-emulator.util';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -12,19 +14,14 @@ describe('ProjectsService', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ProjectsService,
-        {
-          provide: 'DatabaseRepository',
-          useValue: {
-            findAll: jest.fn(),
-            findById: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-          },
-        },
+      imports: [
+        ConfigModule.forRoot({
+          envFilePath: `src/common/config/env/${process.env.NODE_ENV}.env`,
+          isGlobal: true,
+        }),
+        DatabaseModule,
       ],
+      providers: [ProjectsService],
       controllers: [ProjectsController],
     }).compile();
 
@@ -33,12 +30,13 @@ describe('ProjectsService', () => {
     await app.init();
   });
 
-  afterAll(async () => {
-    await app.close();
+  beforeEach(async () => {
+    await clearDataInEmulator();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  afterAll(async () => {
+    await clearDataInEmulator();
+    await app.close();
   });
 
   it('should be defined', () => {
@@ -46,9 +44,8 @@ describe('ProjectsService', () => {
   });
 
   it('should return an array of projects', async () => {
-    const projects: Project[] = [
+    const projectsDtos: CreateProjectDto[] = [
       {
-        id: '1',
         name: 'Project 1',
         customer: 'Customer 1',
         description: 'Description 1',
@@ -57,7 +54,6 @@ describe('ProjectsService', () => {
         end_date: new Date('2023-06-30'),
       },
       {
-        id: '2',
         name: 'Project 2',
         customer: 'Customer 2',
         description: 'Description 2',
@@ -67,190 +63,162 @@ describe('ProjectsService', () => {
       },
     ];
 
-    jest.spyOn(service, 'getAllProjects').mockResolvedValue(projects);
+    for (const project of projectsDtos) {
+      await request(app.getHttpServer()).post('/api/projects').send(project);
+    }
 
-    const response = await request(app.getHttpServer()).get('/api/projects');
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          customer: expect.any(String),
-          description: expect.any(String),
-          end_date: expect.any(String),
-          id: expect.any(String),
-          name: expect.any(String),
-          softwares: expect.any(Array),
-          start_date: expect.any(String),
-        }),
-      ]),
-    );
+    await request(app.getHttpServer())
+      .get('/api/projects')
+      .then((res) => {
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(2);
+        expect(res.body).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+              customer: expect.any(String),
+              description: expect.any(String),
+              softwares: expect.any(Array),
+              start_date: expect.anything(),
+              end_date: expect.anything(),
+              created_at: expect.anything(),
+              updated_at: expect.anything(),
+            }),
+          ]),
+        );
+      });
   });
 
-  it('should return a project by ID', async () => {
-    const projectId = '1';
-    const project: Project = {
-      id: '1',
+  it('should return a project by id', async () => {
+    const projectDto: CreateProjectDto = {
       name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
-    };
-
-    jest.spyOn(service, 'getProject').mockResolvedValue(project);
-
-    const response = await request(app.getHttpServer()).get(
-      `/api/projects/${projectId}`,
-    );
-
-    expect(response.status).toBe(200);
-
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        customer: expect.any(String),
-        description: expect.any(String),
-        end_date: expect.any(String),
-        id: expect.any(String),
-        name: expect.any(String),
-        softwares: expect.any(Array),
-        start_date: expect.any(String),
-      }),
-    );
-  });
-
-  it('should create a new project', async () => {
-    const projectId = '1';
-    const createProjectDto: CreateProjectDto = {
-      name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
-    };
-
-    const resultMock = {
-      message: 'Project successfully created!',
-      status: 201,
-      data: { id: projectId, ...createProjectDto },
-    };
-
-    jest.spyOn(service, 'createProject').mockResolvedValue(resultMock);
-
-    const response = await request(app.getHttpServer())
-      .post('/api/projects')
-      .send(createProjectDto);
-
-    expect(response.status).toBe(201);
-
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        message: expect.any(String),
-        status: expect.any(Number),
-        data: expect.objectContaining({
-          customer: expect.any(String),
-          description: expect.any(String),
-          end_date: expect.any(String),
-          id: expect.any(String),
-          name: expect.any(String),
-          softwares: expect.any(Array),
-          start_date: expect.any(String),
-        }),
-      }),
-    );
-  });
-
-  it('should update an existing project', async () => {
-    const createProjectDto: CreateProjectDto = {
-      name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
-    };
-    const updateProjectDto: UpdateProjectDto = { name: 'Updated Project' };
-
-    const createResponse = await request(app.getHttpServer())
-      .post('/api/projects')
-      .send(createProjectDto);
-
-    const projectId = createResponse.body.data.id;
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { name, ...createProjectDtoWithoutName } = createProjectDto;
-
-    const resultMock = {
-      message: 'Project successfully updated!',
-      status: 201,
-      data: {
-        id: projectId,
-        name: updateProjectDto.name,
-        ...createProjectDtoWithoutName,
-      },
-    };
-
-    jest.spyOn(service, 'updateProject').mockResolvedValue(resultMock);
-
-    const response = await request(app.getHttpServer())
-      .patch(`/api/projects/${projectId}`)
-      .send(updateProjectDto);
-
-    expect(response.status).toBe(200);
-
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        message: expect.any(String),
-        status: expect.any(Number),
-        data: expect.objectContaining({
-          customer: expect.any(String),
-          description: expect.any(String),
-          end_date: expect.any(String),
-          id: expect.any(String),
-          name: updateProjectDto.name,
-          softwares: expect.any(Array),
-          start_date: expect.any(String),
-        }),
-      }),
-    );
-  });
-
-  it('should delete an existing project', async () => {
-    const createProjectDto: CreateProjectDto = {
-      name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
+      customer: 'Customer 1',
+      description: 'Description 1',
+      softwares: ['Software 1', 'Software 2'],
+      start_date: new Date('2023-01-01'),
+      end_date: new Date('2023-06-30'),
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(createProjectDto);
+      .send(projectDto);
 
-    const projectId = createResponse.body.data.id;
+    await request(app.getHttpServer())
+      .get(`/api/projects/${createResponse.body.data.id}`)
+      .then((res) => {
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+            customer: expect.any(String),
+            description: expect.any(String),
+            softwares: expect.any(Array),
+            start_date: expect.anything(),
+            end_date: expect.anything(),
+            created_at: expect.anything(),
+            updated_at: expect.anything(),
+          }),
+        );
+      });
+  });
 
-    const resultMock = {
-      message: `Project with ID "${projectId}" successfully updated!`,
-      status: 200,
+  it('should create a project', async () => {
+    const projectDto: CreateProjectDto = {
+      name: 'Project 1',
+      customer: 'Customer 1',
+      description: 'Description 1',
+      softwares: ['Software 1', 'Software 2'],
+      start_date: new Date('2023-01-01'),
+      end_date: new Date('2023-06-30'),
     };
 
-    jest.spyOn(service, 'deleteProject').mockResolvedValue(resultMock);
+    await request(app.getHttpServer())
+      .post('/api/projects')
+      .send(projectDto)
+      .then((res) => {
+        expect(res.status).toBe(201);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            message: expect.any(String),
+            status: expect.any(Number),
+            data: expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+              customer: expect.any(String),
+              description: expect.any(String),
+              softwares: expect.any(Array),
+              start_date: expect.anything(),
+              end_date: expect.anything(),
+              created_at: expect.anything(),
+              updated_at: expect.anything(),
+            }),
+          }),
+        );
+      });
+  });
 
-    const response = await request(app.getHttpServer()).delete(
-      `/api/projects/${projectId}`,
-    );
+  it('should update a project', async () => {
+    const projectDto: CreateProjectDto = {
+      name: 'Project 1',
+      customer: 'Customer 1',
+      description: 'Description 1',
+      softwares: ['Software 1', 'Software 2'],
+      start_date: new Date('2023-01-01'),
+      end_date: new Date('2023-06-30'),
+    };
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        message: expect.any(String),
-        status: expect.any(Number),
-      }),
-    );
-    expect(response.body).not.toHaveProperty('data', expect.any(Object));
+    const createResponse = await request(app.getHttpServer())
+      .post('/api/projects')
+      .send(projectDto);
+
+    const updatedProjectDto: UpdateProjectDto = {
+      name: 'Project 1 - Updated',
+    };
+
+    await request(app.getHttpServer())
+      .patch(`/api/projects/${createResponse.body.data.id}`)
+      .send(updatedProjectDto)
+      .then((res) => {
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            message: expect.any(String),
+            status: expect.any(Number),
+            data: expect.objectContaining({
+              name: updatedProjectDto.name,
+            }),
+          }),
+        );
+        expect(res.body.data.name).not.toBe(projectDto.name);
+      });
+  });
+
+  it('should delete a project', async () => {
+    const projectDto: CreateProjectDto = {
+      name: 'Project 1',
+      customer: 'Customer 1',
+      description: 'Description 1',
+      softwares: ['Software 1', 'Software 2'],
+      start_date: new Date('2023-01-01'),
+      end_date: new Date('2023-06-30'),
+    };
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/api/projects')
+      .send(projectDto);
+
+    await request(app.getHttpServer())
+      .delete(`/api/projects/${createResponse.body.data.id}`)
+      .then((res) => {
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            message: expect.any(String),
+            status: expect.any(Number),
+          }),
+        );
+      });
   });
 });
