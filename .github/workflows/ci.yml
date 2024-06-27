@@ -39,3 +39,5 @@ jobs:
 
       - name: Run tests with Firestore emulator
         run: npm run test:with-emulator
+        env:
+          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
