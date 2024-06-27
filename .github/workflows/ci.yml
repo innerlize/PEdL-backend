@@ -25,6 +25,14 @@ jobs:
       - name: Run Prettier
         run: npm run format
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-firebase-emulators-
+
       - name: Run tests with Firestore emulator
         run: npm run test:with-emulator
         env:
