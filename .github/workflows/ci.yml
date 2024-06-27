@@ -16,18 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Clear npm cache
-        run: npm cache clean --force
-
-      - name: Update npm
-        run: npm install -g npm@latest
-
-      - name: Remove package-lock.json
-        run: rm package-lock.json
-
-      - name: Set up Firebase tools
-        run: npm install -g firebase-tools
-
       - name: Install dependencies
         run: npm install
 
