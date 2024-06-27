@@ -36,6 +36,13 @@ jobs:
           FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
           FIRESTORE_EMULATOR_HOST: ${{ secrets.FIRESTORE_EMULATOR_HOST }}
 
+      - name: Report LCOV
+        uses: zgosalvez/github-actions-report-lcov@v4.1.10
+        with:
+          coverage-files: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          minimum-coverage: 90
+
       - name: Run ESLint
         run: npm run lint
 
