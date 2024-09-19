@@ -46,6 +46,7 @@ describe('ProjectsController', () => {
         customer: 'Customer A',
         description: 'Project description',
         softwares: ['Software A', 'Software B'],
+        thumbnail: 'https://example.com/image.png',
         start_date: new Date('2024-06-17'),
         end_date: new Date('2024-12-31'),
       },
@@ -65,6 +66,7 @@ describe('ProjectsController', () => {
       customer: 'Customer A',
       description: 'Project description',
       softwares: ['Software A', 'Software B'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2024-06-17'),
       end_date: new Date('2024-12-31'),
     };
@@ -80,6 +82,7 @@ describe('ProjectsController', () => {
       customer: 'Customer A',
       description: 'Project description',
       softwares: ['Software A', 'Software B'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2024-06-17'),
       end_date: new Date('2024-12-31'),
     };
