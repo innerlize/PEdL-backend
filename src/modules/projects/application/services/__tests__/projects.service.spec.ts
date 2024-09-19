@@ -44,12 +44,13 @@ describe('ProjectsService', () => {
   });
 
   it('should return an array of projects', async () => {
-    const projectsDtos: CreateProjectDto[] = [
+    const projects: CreateProjectDto[] = [
       {
         name: 'Project 1',
         customer: 'Customer 1',
         description: 'Description 1',
         softwares: ['Software 1', 'Software 2'],
+        thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
       },
@@ -58,12 +59,13 @@ describe('ProjectsService', () => {
         customer: 'Customer 2',
         description: 'Description 2',
         softwares: ['Software 3'],
+        thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-02-01'),
         end_date: new Date('2023-07-31'),
       },
     ];
 
-    for (const project of projectsDtos) {
+    for (const project of projects) {
       await request(app.getHttpServer()).post('/api/projects').send(project);
     }
 
@@ -80,6 +82,7 @@ describe('ProjectsService', () => {
               customer: expect.any(String),
               description: expect.any(String),
               softwares: expect.any(Array),
+              thumbnail: expect.any(String),
               start_date: expect.anything(),
               end_date: expect.anything(),
               created_at: expect.anything(),
@@ -91,18 +94,19 @@ describe('ProjectsService', () => {
   });
 
   it('should return a project by id', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
       softwares: ['Software 1', 'Software 2'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     await request(app.getHttpServer())
       .get(`/api/projects/${createResponse.body.data.id}`)
@@ -115,6 +119,7 @@ describe('ProjectsService', () => {
             customer: expect.any(String),
             description: expect.any(String),
             softwares: expect.any(Array),
+            thumbnail: expect.any(String),
             start_date: expect.anything(),
             end_date: expect.anything(),
             created_at: expect.anything(),
@@ -132,18 +137,19 @@ describe('ProjectsService', () => {
   });
 
   it('should create a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
       softwares: ['Software 1', 'Software 2'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
     };
 
     await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto)
+      .send(project)
       .then((res) => {
         expect(res.status).toBe(201);
         expect(res.body).toEqual(
@@ -156,6 +162,7 @@ describe('ProjectsService', () => {
               customer: expect.any(String),
               description: expect.any(String),
               softwares: expect.any(Array),
+              thumbnail: expect.any(String),
               start_date: expect.anything(),
               end_date: expect.anything(),
               created_at: expect.anything(),
@@ -167,18 +174,19 @@ describe('ProjectsService', () => {
   });
 
   it('should update a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
       softwares: ['Software 1', 'Software 2'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     const updatedProjectDto: UpdateProjectDto = {
       name: 'Project 1 - Updated',
@@ -198,23 +206,24 @@ describe('ProjectsService', () => {
             }),
           }),
         );
-        expect(res.body.data.name).not.toBe(projectDto.name);
+        expect(res.body.data.name).not.toBe(project.name);
       });
   });
 
   it('should delete a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
       softwares: ['Software 1', 'Software 2'],
+      thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     await request(app.getHttpServer())
       .delete(`/api/projects/${createResponse.body.data.id}`)

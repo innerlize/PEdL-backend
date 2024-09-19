@@ -5,9 +5,10 @@ export interface Project {
   id: string;
   name: string;
   customer: string;
-  media?: Media;
   description: string;
   softwares: string[];
+  thumbnail: string;
+  media?: Media;
   start_date: Date;
   end_date: Date;
   links?: Link[];

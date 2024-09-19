@@ -19,11 +19,6 @@ export class UpdateProjectDto {
   customer?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => MediaDto)
-  media?: MediaDto;
-
-  @IsOptional()
   @IsString()
   description?: string;
 
@@ -31,6 +26,14 @@ export class UpdateProjectDto {
   @IsArray()
   @IsString({ each: true })
   softwares?: string[];
+
+  @IsString()
+  thumbnail?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MediaDto)
+  media?: MediaDto;
 
   @IsOptional()
   @IsDate()
