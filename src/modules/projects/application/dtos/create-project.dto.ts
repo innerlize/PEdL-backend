@@ -16,17 +16,20 @@ export class CreateProjectDto {
   @IsString()
   customer: string;
 
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => MediaDto)
-  media?: MediaDto;
-
   @IsString()
   description: string;
 
   @IsArray()
   @IsString({ each: true })
   softwares: string[];
+
+  @IsString()
+  thumbnail: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MediaDto)
+  media?: MediaDto;
 
   @IsDate()
   @Type(() => Date)
