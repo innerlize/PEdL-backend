@@ -44,7 +44,7 @@ describe('ProjectsService', () => {
   });
 
   it('should return an array of partners', async () => {
-    const partnersDtos: CreatePartnerDto[] = [
+    const partners: CreatePartnerDto[] = [
       {
         name: 'Partner 1',
         image: 'example.com',
@@ -55,7 +55,7 @@ describe('ProjectsService', () => {
       },
     ];
 
-    for (const partner of partnersDtos) {
+    for (const partner of partners) {
       await request(app.getHttpServer()).post('/api/partners').send(partner);
     }
 
@@ -79,14 +79,14 @@ describe('ProjectsService', () => {
   });
 
   it('should return a partner by id', async () => {
-    const partnerDto: CreatePartnerDto = {
+    const partner: CreatePartnerDto = {
       name: 'Partner 1',
       image: 'example.com',
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
-      .send(partnerDto);
+      .send(partner);
 
     await request(app.getHttpServer())
       .get(`/api/partners/${createResponse.body.data.id}`)
@@ -112,14 +112,14 @@ describe('ProjectsService', () => {
   });
 
   it('should create a partner', async () => {
-    const partnerDto: CreatePartnerDto = {
+    const partner: CreatePartnerDto = {
       name: 'Partner 1',
       image: 'example.com',
     };
 
     await request(app.getHttpServer())
       .post('/api/partners')
-      .send(partnerDto)
+      .send(partner)
       .then((res) => {
         expect(res.status).toBe(201);
         expect(res.body).toEqual(
@@ -139,14 +139,14 @@ describe('ProjectsService', () => {
   });
 
   it('should update a partner', async () => {
-    const partnerDto: CreatePartnerDto = {
+    const partner: CreatePartnerDto = {
       name: 'Partner 1',
       image: 'example.com',
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
-      .send(partnerDto);
+      .send(partner);
 
     const updatedPartnerDto: UpdatePartnerDto = {
       name: 'Partner 1 - Updated',
@@ -166,19 +166,19 @@ describe('ProjectsService', () => {
             }),
           }),
         );
-        expect(res.body.data.name).not.toBe(partnerDto.name);
+        expect(res.body.data.name).not.toBe(partner.name);
       });
   });
 
   it('should delete a partner', async () => {
-    const partnerDto: CreatePartnerDto = {
+    const partner: CreatePartnerDto = {
       name: 'Project 1',
       image: 'example.com',
     };
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
-      .send(partnerDto);
+      .send(partner);
 
     await request(app.getHttpServer())
       .delete(`/api/partners/${createResponse.body.data.id}`)

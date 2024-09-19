@@ -44,7 +44,7 @@ describe('ProjectsService', () => {
   });
 
   it('should return an array of projects', async () => {
-    const projectsDtos: CreateProjectDto[] = [
+    const projects: CreateProjectDto[] = [
       {
         name: 'Project 1',
         customer: 'Customer 1',
@@ -65,7 +65,7 @@ describe('ProjectsService', () => {
       },
     ];
 
-    for (const project of projectsDtos) {
+    for (const project of projects) {
       await request(app.getHttpServer()).post('/api/projects').send(project);
     }
 
@@ -94,7 +94,7 @@ describe('ProjectsService', () => {
   });
 
   it('should return a project by id', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
@@ -106,7 +106,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     await request(app.getHttpServer())
       .get(`/api/projects/${createResponse.body.data.id}`)
@@ -137,7 +137,7 @@ describe('ProjectsService', () => {
   });
 
   it('should create a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
@@ -149,7 +149,7 @@ describe('ProjectsService', () => {
 
     await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto)
+      .send(project)
       .then((res) => {
         expect(res.status).toBe(201);
         expect(res.body).toEqual(
@@ -174,7 +174,7 @@ describe('ProjectsService', () => {
   });
 
   it('should update a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
@@ -186,7 +186,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     const updatedProjectDto: UpdateProjectDto = {
       name: 'Project 1 - Updated',
@@ -206,12 +206,12 @@ describe('ProjectsService', () => {
             }),
           }),
         );
-        expect(res.body.data.name).not.toBe(projectDto.name);
+        expect(res.body.data.name).not.toBe(project.name);
       });
   });
 
   it('should delete a project', async () => {
-    const projectDto: CreateProjectDto = {
+    const project: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer 1',
       description: 'Description 1',
@@ -223,7 +223,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
-      .send(projectDto);
+      .send(project);
 
     await request(app.getHttpServer())
       .delete(`/api/projects/${createResponse.body.data.id}`)
