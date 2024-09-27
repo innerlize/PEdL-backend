@@ -33,8 +33,10 @@ jobs:
       - name: Run tests with Firestore emulator
         run: npm run test:with-emulator
         env:
-          FIRESTORE_PROJECT_ID: ${{ secrets.FIRESTORE_PROJECT_ID }}
+          GCLOUD_PROJECT: ${{ secrets.GCLOUD_PROJECT }}
+          FIREBASE_EMULATOR_HUB_HOST: ${{ secrets.FIREBASE_EMULATOR_HUB_HOST }}
           FIRESTORE_EMULATOR_HOST: ${{ secrets.FIRESTORE_EMULATOR_HOST }}
+          FIREBASE_AUTH_EMULATOR_HOST: ${{ secrets.FIREBASE_AUTH_EMULATOR_HOST }}
 
       - name: Report LCOV
         uses: zgosalvez/github-actions-report-lcov@v1
