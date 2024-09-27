@@ -20,7 +20,7 @@
     "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json",
     "prepare": "husky",
     "emulator:start": "firebase emulators:start --import=./data/firestore/development --export-on-exit --project=demo-project",
-    "test:with-emulator": "cross-env NODE_ENV=test firebase emulators:exec --only firestore \"npm run test:cov\""
+    "test:with-emulator": "cross-env NODE_ENV=test firebase emulators:exec \"npm run test:cov\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
