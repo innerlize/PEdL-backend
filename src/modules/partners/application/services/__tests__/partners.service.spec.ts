@@ -2,15 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../../../database/database.module';
-import { clearDataInEmulator } from '../../../../../utils/clear-data-in-emulator.util';
 import { PartnersService } from '../partners.service';
 import { PartnersController } from '../../../controllers/partners.controller';
 import { CreatePartnerDto } from '../../dtos/create-partner.dto';
 import { UpdatePartnerDto } from '../../dtos/update-partner.dto';
+import {
+  initializeTestEnvironment,
+  RulesTestEnvironment,
+} from '@firebase/rules-unit-testing';
 
 describe('ProjectsService', () => {
   let service: PartnersService;
   let app: any;
+  let testEnv: RulesTestEnvironment;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,17 +29,21 @@ describe('ProjectsService', () => {
       controllers: [PartnersController],
     }).compile();
 
+    testEnv = await initializeTestEnvironment({
+      projectId: process.env.GCLOUD_PROJECT,
+    });
     service = module.get<PartnersService>(PartnersService);
     app = module.createNestApplication();
+
     await app.init();
   });
 
   beforeEach(async () => {
-    await clearDataInEmulator();
+    await testEnv.clearFirestore();
   });
 
   afterAll(async () => {
-    await clearDataInEmulator();
+    await testEnv.cleanup();
     await app.close();
   });
 

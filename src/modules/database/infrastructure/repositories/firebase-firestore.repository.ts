@@ -8,7 +8,7 @@ import * as admin from 'firebase-admin';
 import { DatabaseRepository } from '../../../../common/domain/database-repository.interface';
 
 @Injectable()
-export class FirebaseRepository<T> implements DatabaseRepository<T> {
+export class FirestoreRepository<T> implements DatabaseRepository<T> {
   private firestore: admin.firestore.Firestore;
 
   constructor(

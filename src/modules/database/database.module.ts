@@ -1,16 +1,13 @@
 import { Module } from '@nestjs/common';
-import { FirebaseRepository } from './infrastructure/repositories/firebase.repository';
-import { getFirebaseConfig } from '../../common/config/get-firebase-config';
+import { FirestoreRepository } from './infrastructure/repositories/firebase-firestore.repository';
+import { FirebaseAdminModule } from '../firebase/firebase-admin.module';
 
 @Module({
+  imports: [FirebaseAdminModule],
   providers: [
     {
-      provide: 'FirebaseAdmin',
-      useFactory: getFirebaseConfig,
-    },
-    {
       provide: 'DatabaseRepository',
-      useClass: FirebaseRepository,
+      useClass: FirestoreRepository,
     },
   ],
   exports: ['DatabaseRepository'],

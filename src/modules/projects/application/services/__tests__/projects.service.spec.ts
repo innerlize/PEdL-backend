@@ -6,11 +6,15 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../../../database/database.module';
 import { CreateProjectDto } from '../../dtos/create-project.dto';
 import { UpdateProjectDto } from '../../dtos/update-project.dto';
-import { clearDataInEmulator } from '../../../../../utils/clear-data-in-emulator.util';
+import {
+  initializeTestEnvironment,
+  RulesTestEnvironment,
+} from '@firebase/rules-unit-testing';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let app: any;
+  let testEnv: RulesTestEnvironment;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,17 +29,21 @@ describe('ProjectsService', () => {
       controllers: [ProjectsController],
     }).compile();
 
+    testEnv = await initializeTestEnvironment({
+      projectId: process.env.GCLOUD_PROJECT,
+    });
     service = module.get<ProjectsService>(ProjectsService);
     app = module.createNestApplication();
+
     await app.init();
   });
 
   beforeEach(async () => {
-    await clearDataInEmulator();
+    await testEnv.clearFirestore();
   });
 
   afterAll(async () => {
-    await clearDataInEmulator();
+    await testEnv.cleanup();
     await app.close();
   });
 
