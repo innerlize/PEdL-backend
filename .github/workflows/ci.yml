@@ -37,6 +37,7 @@ jobs:
           FIREBASE_EMULATOR_HUB_HOST: ${{ secrets.FIREBASE_EMULATOR_HUB_HOST }}
           FIRESTORE_EMULATOR_HOST: ${{ secrets.FIRESTORE_EMULATOR_HOST }}
           FIREBASE_AUTH_EMULATOR_HOST: ${{ secrets.FIREBASE_AUTH_EMULATOR_HOST }}
+          ADMIN_EMAIL: ${{ secrets.MOCKED_ADMIN_EMAIL }}
 
       - name: Report LCOV
         uses: zgosalvez/github-actions-report-lcov@v1
