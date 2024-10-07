@@ -4,11 +4,12 @@ import fetch from 'node-fetch';
 export async function createUser(
   uid: string,
   email: string,
+  emailVerified: boolean = true,
 ): Promise<admin.auth.UserRecord> {
   return await admin.auth().createUser({
     uid,
     email,
-    emailVerified: true,
+    emailVerified,
   });
 }
 
