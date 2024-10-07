@@ -19,8 +19,10 @@ export async function generateCustomToken(uid: string): Promise<string> {
 export async function verifyCustomToken(
   customToken: string,
 ): Promise<{ idToken: string }> {
+  const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
   const response = await fetch(
-    'http://localhost:9099/www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=AIzaSyD8Pwp96JHSiyJ0pomYR8xJnJk_T-D-jLo',
+    `http://${authEmulatorHost}/www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=fake-api-key`,
     {
       method: 'POST',
       headers: {
