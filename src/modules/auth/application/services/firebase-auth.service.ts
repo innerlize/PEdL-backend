@@ -26,6 +26,10 @@ export class FirebaseAuthService implements AuthService {
     try {
       const userData = await this.verifyAndDecodeFirebaseToken(token);
 
+      if (!process.env.ADMIN_EMAIL) {
+        throw new Error("'ADMIN_EMAIL' environment variable not set");
+      }
+
       const isExpectedUser = userData.email === process.env.ADMIN_EMAIL;
       const userEmailIsVerified = userData.email_verified;
 
@@ -35,6 +39,7 @@ export class FirebaseAuthService implements AuthService {
 
       return false;
     } catch (error) {
+      console.error('Error verifying admin access: ', error);
       return false;
     }
   }
