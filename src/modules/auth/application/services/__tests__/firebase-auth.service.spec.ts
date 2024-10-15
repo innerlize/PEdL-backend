@@ -10,7 +10,7 @@ import {
   verifyCustomToken,
   updateUserEmail,
   clearAuth,
-} from './utils/admin-auth-test.utils';
+} from '../../../../../common/application/utils/admin-auth-test.utils';
 
 describe('FirebaseAuthService', () => {
   let service: FirebaseAuthService;

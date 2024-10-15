@@ -10,11 +10,17 @@ import {
   initializeTestEnvironment,
   RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
+import { AuthModule } from '../../../../auth/auth.module';
+import {
+  clearAuth,
+  loginAsAdmin,
+} from '../../../../../common/application/utils/admin-auth-test.utils';
 
 describe('ProjectsService', () => {
   let service: PartnersService;
   let app: any;
   let testEnv: RulesTestEnvironment;
+  let testIdToken: string;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,6 +30,7 @@ describe('ProjectsService', () => {
           isGlobal: true,
         }),
         DatabaseModule,
+        AuthModule,
       ],
       providers: [PartnersService],
       controllers: [PartnersController],
@@ -39,10 +46,17 @@ describe('ProjectsService', () => {
   });
 
   beforeEach(async () => {
+    await clearAuth();
+    testIdToken = '';
     await testEnv.clearFirestore();
+
+    const idToken = await loginAsAdmin();
+    testIdToken = idToken;
   });
 
   afterAll(async () => {
+    await clearAuth();
+    testIdToken = '';
     await testEnv.cleanup();
     await app.close();
   });
@@ -64,7 +78,10 @@ describe('ProjectsService', () => {
     ];
 
     for (const partner of partners) {
-      await request(app.getHttpServer()).post('/api/partners').send(partner);
+      await request(app.getHttpServer())
+        .post('/api/partners')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(partner);
     }
 
     await request(app.getHttpServer())
@@ -94,6 +111,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(partner);
 
     await request(app.getHttpServer())
@@ -127,6 +145,7 @@ describe('ProjectsService', () => {
 
     await request(app.getHttpServer())
       .post('/api/partners')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(partner)
       .then((res) => {
         expect(res.status).toBe(201);
@@ -154,6 +173,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(partner);
 
     const updatedPartnerDto: UpdatePartnerDto = {
@@ -162,6 +182,7 @@ describe('ProjectsService', () => {
 
     await request(app.getHttpServer())
       .patch(`/api/partners/${createResponse.body.data.id}`)
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(updatedPartnerDto)
       .then((res) => {
         expect(res.status).toBe(200);
@@ -186,10 +207,12 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/partners')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(partner);
 
     await request(app.getHttpServer())
       .delete(`/api/partners/${createResponse.body.data.id}`)
+      .set('Authorization', `Bearer ${testIdToken}`)
       .then((res) => {
         expect(res.status).toBe(200);
         expect(res.body).toEqual(
