@@ -4,6 +4,7 @@ import { ProjectsService } from '../../application/services/projects.service';
 import { CreateProjectDto } from '../../application/dtos/create-project.dto';
 import { UpdateProjectDto } from '../../application/dtos/update-project.dto';
 import { Project } from '../../domain/interfaces/project.interface';
+import { AuthGuard } from '../../../../common/application/guards/auth.guard';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -24,7 +25,10 @@ describe('ProjectsController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<ProjectsController>(ProjectsController);
     service = module.get<ProjectsService>(ProjectsService);
