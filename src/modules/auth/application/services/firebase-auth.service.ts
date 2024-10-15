@@ -18,6 +18,7 @@ export class FirebaseAuthService implements AuthService {
 
       return decodedToken;
     } catch (error) {
+      console.error('Error verifying Firebase token: ', error);
       return null;
     }
   }
