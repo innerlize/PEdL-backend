@@ -6,6 +6,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
+  const port = process.env.PORT || 3000;
+  const swaggerPath = process.env.SWAGGER_PATH || '/api';
+  const swaggerJsonPath = process.env.SWAGGER_JSON_PATH || '/api-json';
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('PEdL API')
     .setDescription(
@@ -28,9 +32,11 @@ async function bootstrap() {
 
   const apiDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
-  SwaggerModule.setup('api/docs', app, apiDocument);
+  SwaggerModule.setup(swaggerPath, app, apiDocument, {
+    jsonDocumentUrl: swaggerJsonPath,
+  });
 
-  await app.listen(3808);
+  await app.listen(port);
 }
 
 bootstrap();
