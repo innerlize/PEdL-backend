@@ -11,6 +11,11 @@ async function bootstrap() {
     .setDescription(
       'A highly scalable and maintainable API for managing various resources, with secure admin user authentication and a comprehensive set of features for efficient content management.',
     )
+    .addBearerAuth({
+      type: 'http',
+      description:
+        'Authorization header using the Bearer scheme, followed by a JWT token signed by Firebase. You <strong>don&apos;t need to include</strong> the "Bearer" prefix, just the token. <br/><br/> <strong>Example:</strong> <br/> Bearer {token}<strong> <br/><br/>',
+    })
     .setVersion('1.0')
     .build();
 
