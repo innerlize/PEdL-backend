@@ -1,15 +1,36 @@
-import { Link } from '../../../../common/domain/link.interface';
 import { Media } from './media.interface';
+import { Link } from '../../../../common/domain/link.interface';
+import { Timestamp } from '../../../../common/domain/timestamp.interface';
+import { ApiProperty } from '@nestjs/swagger';
 
-export interface Project {
+export class Project {
+  @ApiProperty()
   id: string;
+
+  @ApiProperty()
   name: string;
+
+  @ApiProperty()
   customer: string;
+
+  @ApiProperty()
   description: string;
+
+  @ApiProperty()
   softwares: string[];
+
+  @ApiProperty()
   thumbnail: string;
+
+  @ApiProperty()
   media?: Media;
-  start_date: Date;
-  end_date: Date;
+
+  @ApiProperty()
+  start_date: Timestamp;
+
+  @ApiProperty()
+  end_date: Timestamp;
+
+  @ApiProperty()
   links?: Link[];
 }
