@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
-import { CustomResponse } from 'src/common/domain/custom-response';
-import { Partner } from '../../domain/interfaces/partner';
+import { CustomResponse } from '../../../../common/domain/custom-response.interface';
+import { Partner } from '../../domain/interfaces/partner.interface';
 import { CreatePartnerDto } from '../dtos/create-partner.dto';
 import { UpdatePartnerDto } from '../dtos/update-partner.dto';
 
