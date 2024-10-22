@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('PEdL API')
@@ -18,8 +18,6 @@ async function bootstrap() {
     })
     .setVersion('1.0')
     .build();
-
-  app.enableCors();
 
   app.useGlobalPipes(
     new ValidationPipe({
