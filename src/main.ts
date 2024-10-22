@@ -6,7 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('PEdL API')
     .setDescription(
       'A highly scalable and maintainable API for managing various resources, with secure admin user authentication and a comprehensive set of features for efficient content management.',
@@ -28,7 +28,7 @@ async function bootstrap() {
     }),
   );
 
-  const apiDocument = SwaggerModule.createDocument(app, config);
+  const apiDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
   SwaggerModule.setup('api/docs', app, apiDocument);
 
