@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PartnersController } from '../partners.controller';
 import { PartnersService } from '../../application/services/partners.service';
-import { Partner } from '../../domain/interfaces/partner';
+import { Partner } from '../../domain/interfaces/partner.interface';
 import { CreatePartnerDto } from '../../application/dtos/create-partner.dto';
 import { UpdatePartnerDto } from '../../application/dtos/update-partner.dto';
 import { AuthGuard } from '../../../../common/application/guards/auth.guard';
