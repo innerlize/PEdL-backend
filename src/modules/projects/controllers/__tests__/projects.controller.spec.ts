@@ -51,8 +51,14 @@ describe('ProjectsController', () => {
         description: 'Project description',
         softwares: ['Software A', 'Software B'],
         thumbnail: 'https://example.com/image.png',
-        start_date: new Date('2024-06-17'),
-        end_date: new Date('2024-12-31'),
+        start_date: {
+          seconds: 1735689600,
+          nanoseconds: 0,
+        },
+        end_date: {
+          seconds: 1835689600,
+          nanoseconds: 0,
+        },
       },
     ];
 
@@ -71,8 +77,14 @@ describe('ProjectsController', () => {
       description: 'Project description',
       softwares: ['Software A', 'Software B'],
       thumbnail: 'https://example.com/image.png',
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
+      start_date: {
+        seconds: 1735689600,
+        nanoseconds: 0,
+      },
+      end_date: {
+        seconds: 1835689600,
+        nanoseconds: 0,
+      },
     };
 
     jest.spyOn(service, 'getProject').mockResolvedValue(result);
