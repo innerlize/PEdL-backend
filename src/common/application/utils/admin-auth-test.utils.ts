@@ -53,7 +53,7 @@ export async function updateUserEmail(
   });
 }
 
-export const clearAuth = async () => {
+export const clearAuth = async (): Promise<void> => {
   const firebaseProjectId = process.env.GCLOUD_PROJECT;
   const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
 
@@ -64,6 +64,21 @@ export const clearAuth = async () => {
     },
   );
 
-  if (res.status !== 200)
+  if (res.status !== 200 || !res.ok)
     throw new Error('Unable to reset Authentication Emulators');
+};
+
+export const loginAsAdmin = async (): Promise<string> => {
+  const mockedUid = 'abc123';
+  const mockedEmail = process.env.ADMIN_EMAIL as string;
+
+  const userRecord = await createUser(mockedUid, mockedEmail);
+
+  const customToken = await generateCustomToken(userRecord.uid);
+
+  const { idToken } = await verifyCustomToken(customToken);
+
+  await updateUserEmail(userRecord.uid, process.env.ADMIN_EMAIL as string);
+
+  return idToken;
 };

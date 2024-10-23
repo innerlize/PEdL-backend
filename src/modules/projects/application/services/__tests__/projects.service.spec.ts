@@ -10,11 +10,18 @@ import {
   initializeTestEnvironment,
   RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
+import { AuthModule } from '../../../../auth/auth.module';
+import {
+  clearAuth,
+  loginAsAdmin,
+} from '../../../../../common/application/utils/admin-auth-test.utils';
+import { AuthGuard } from '../../../../../common/application/guards/auth.guard';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let app: any;
   let testEnv: RulesTestEnvironment;
+  let testIdToken: string;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,10 +31,14 @@ describe('ProjectsService', () => {
           isGlobal: true,
         }),
         DatabaseModule,
+        AuthModule,
       ],
       providers: [ProjectsService],
       controllers: [ProjectsController],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     testEnv = await initializeTestEnvironment({
       projectId: process.env.GCLOUD_PROJECT,
@@ -39,10 +50,17 @@ describe('ProjectsService', () => {
   });
 
   beforeEach(async () => {
+    await clearAuth();
+    testIdToken = '';
     await testEnv.clearFirestore();
+
+    const idToken = await loginAsAdmin();
+    testIdToken = idToken;
   });
 
   afterAll(async () => {
+    await clearAuth();
+    testIdToken = '';
     await testEnv.cleanup();
     await app.close();
   });
@@ -74,7 +92,10 @@ describe('ProjectsService', () => {
     ];
 
     for (const project of projects) {
-      await request(app.getHttpServer()).post('/api/projects').send(project);
+      await request(app.getHttpServer())
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(project);
     }
 
     await request(app.getHttpServer())
@@ -114,6 +135,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(project);
 
     await request(app.getHttpServer())
@@ -157,6 +179,7 @@ describe('ProjectsService', () => {
 
     await request(app.getHttpServer())
       .post('/api/projects')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(project)
       .then((res) => {
         expect(res.status).toBe(201);
@@ -194,6 +217,7 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(project);
 
     const updatedProjectDto: UpdateProjectDto = {
@@ -202,6 +226,7 @@ describe('ProjectsService', () => {
 
     await request(app.getHttpServer())
       .patch(`/api/projects/${createResponse.body.data.id}`)
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(updatedProjectDto)
       .then((res) => {
         expect(res.status).toBe(200);
@@ -231,10 +256,12 @@ describe('ProjectsService', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/api/projects')
+      .set('Authorization', `Bearer ${testIdToken}`)
       .send(project);
 
     await request(app.getHttpServer())
       .delete(`/api/projects/${createResponse.body.data.id}`)
+      .set('Authorization', `Bearer ${testIdToken}`)
       .then((res) => {
         expect(res.status).toBe(200);
         expect(res.body).toEqual(

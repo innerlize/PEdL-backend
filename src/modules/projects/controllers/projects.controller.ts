@@ -6,12 +6,14 @@ import {
   Param,
   Delete,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from '../application/services/projects.service';
 import { CreateProjectDto } from '../application/dtos/create-project.dto';
 import { Project } from '../domain/interfaces/project.interface';
 import { UpdateProjectDto } from '../application/dtos/update-project.dto';
 import { CustomResponse } from 'src/common/domain/custom-response';
+import { AuthGuard } from '../../../common/application/guards/auth.guard';
 
 @Controller('api/projects')
 export class ProjectsController {
@@ -27,6 +29,7 @@ export class ProjectsController {
     return await this.projectsService.getProject(id);
   }
 
+  @UseGuards(AuthGuard)
   @Post('/')
   async createProject(
     @Body() createProjectDto: CreateProjectDto,
@@ -34,6 +37,7 @@ export class ProjectsController {
     return await this.projectsService.createProject(createProjectDto);
   }
 
+  @UseGuards(AuthGuard)
   @Patch('/:id')
   async updateProject(
     @Param('id') id: string,
@@ -42,6 +46,7 @@ export class ProjectsController {
     return await this.projectsService.updateProject(id, updateProjectDto);
   }
 
+  @UseGuards(AuthGuard)
   @Delete('/:id')
   async deleteProject(@Param('id') id: string): Promise<CustomResponse> {
     return await this.projectsService.deleteProject(id);

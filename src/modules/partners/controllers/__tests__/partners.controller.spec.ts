@@ -4,6 +4,7 @@ import { PartnersService } from '../../application/services/partners.service';
 import { Partner } from '../../domain/interfaces/partner';
 import { CreatePartnerDto } from '../../application/dtos/create-partner.dto';
 import { UpdatePartnerDto } from '../../application/dtos/update-partner.dto';
+import { AuthGuard } from '../../../../common/application/guards/auth.guard';
 
 describe('PartnersController', () => {
   let controller: PartnersController;
@@ -24,7 +25,10 @@ describe('PartnersController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<PartnersController>(PartnersController);
     service = module.get<PartnersService>(PartnersService);
