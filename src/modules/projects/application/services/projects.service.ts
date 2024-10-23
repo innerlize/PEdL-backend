@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CreateProjectDto } from '../dtos/create-project.dto';
-import { Project } from '../../domain/interfaces/project.interface';
 import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
-import { CustomResponse } from 'src/common/domain/custom-response';
+import { CustomResponse } from '../../../../common/domain/custom-response.interface';
+import { ProjectEntity as Project } from '../../domain/entities/project.entity';
 
 @Injectable()
 export class ProjectsService {

@@ -14,7 +14,7 @@ import { AuthModule } from '../../../../auth/auth.module';
 import {
   clearAuth,
   loginAsAdmin,
-} from '../../../../../common/application/utils/admin-auth-test.utils';
+} from '../../../../../common/utils/admin-auth-test.utils';
 import { AuthGuard } from '../../../../../common/application/guards/auth.guard';
 
 describe('ProjectsService', () => {

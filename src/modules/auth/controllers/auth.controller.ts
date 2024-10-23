@@ -6,7 +6,20 @@ import {
 } from '@nestjs/common';
 import { AuthToken } from '../../../common/application/decorators/auth-token.decorator';
 import { AuthService } from '../../../common/domain/auth-service.interface';
+import { ApiHeader, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
+@ApiHeader({
+  name: 'Authorization',
+  description:
+    'In order to access this endpoint, you must provide a valid token signed by Firebase',
+  examples: {
+    'Bearer {token}': {
+      value:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    },
+  },
+})
 @Controller('api/admin/auth')
 export class AuthController {
   constructor(

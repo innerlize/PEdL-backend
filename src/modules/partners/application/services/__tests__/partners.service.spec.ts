@@ -14,7 +14,7 @@ import { AuthModule } from '../../../../auth/auth.module';
 import {
   clearAuth,
   loginAsAdmin,
-} from '../../../../../common/application/utils/admin-auth-test.utils';
+} from '../../../../../common/utils/admin-auth-test.utils';
 
 describe('ProjectsService', () => {
   let service: PartnersService;
