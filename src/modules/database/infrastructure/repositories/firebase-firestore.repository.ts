@@ -26,9 +26,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
         (doc) =>
           ({
             id: doc.id,
+            ...doc.data(),
             created_at: doc.createTime,
             updated_at: doc.updateTime,
-            ...doc.data(),
           }) as T,
       );
     } catch (e) {
@@ -45,9 +45,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
     return {
       id: doc.id,
+      ...doc.data(),
       created_at: doc.createTime,
       updated_at: doc.updateTime,
-      ...doc.data(),
     } as T;
   }
 
@@ -89,9 +89,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
       return {
         id: doc.id,
+        ...doc.data(),
         created_at: doc.createTime,
         updated_at: doc.updateTime,
-        ...doc.data(),
       } as T;
     } catch (e) {
       throw new BadRequestException('Error creating document: ' + e.message);
@@ -113,9 +113,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
       return {
         id: updatedDoc.id,
+        ...updatedDoc.data(),
         created_at: doc.createTime,
         updated_at: doc.updateTime,
-        ...updatedDoc.data(),
       } as T;
     } catch (e) {
       throw new BadRequestException('Error updating document: ' + e.message);
