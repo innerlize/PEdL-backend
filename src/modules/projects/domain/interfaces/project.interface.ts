@@ -2,6 +2,7 @@ import { Media } from './media.interface';
 import { Link } from '../../../../common/domain/link.interface';
 import { Timestamp } from '../../../../common/domain/timestamp.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProjectOrderByApp } from './project-order-by-app.interface';
 
 export class Project {
   @ApiProperty()
@@ -33,4 +34,7 @@ export class Project {
 
   @ApiPropertyOptional()
   links?: Link[];
+
+  @ApiProperty()
+  order: ProjectOrderByApp;
 }
