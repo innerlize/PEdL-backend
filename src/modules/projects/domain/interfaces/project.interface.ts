@@ -1,7 +1,7 @@
 import { Media } from './media.interface';
 import { Link } from '../../../../common/domain/link.interface';
 import { Timestamp } from '../../../../common/domain/timestamp.interface';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Project {
   @ApiProperty()
@@ -22,7 +22,7 @@ export class Project {
   @ApiProperty()
   thumbnail: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   media?: Media;
 
   @ApiProperty()
@@ -31,6 +31,6 @@ export class Project {
   @ApiProperty()
   end_date: Timestamp;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   links?: Link[];
 }
