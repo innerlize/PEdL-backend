@@ -56,14 +56,6 @@ export class ProjectsController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('/:id')
-  @ApiBearerAuth()
-  @ApiOkResponse({ type: CustomResponse })
-  async deleteProject(@Param('id') id: string): Promise<CustomResponse> {
-    return await this.projectsService.deleteProject(id);
-  }
-
-  @UseGuards(AuthGuard)
   @Patch('/:id/order')
   @ApiBearerAuth()
   @ApiOkResponse({ type: CustomResponse })
@@ -75,5 +67,13 @@ export class ProjectsController {
       id,
       updateProjectOrderDto,
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/:id')
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: CustomResponse })
+  async deleteProject(@Param('id') id: string): Promise<CustomResponse> {
+    return await this.projectsService.deleteProject(id);
   }
 }
