@@ -1,9 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from '../dtos/create-project.dto';
-import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
 import { CustomResponse } from '../../../../common/domain/custom-response.interface';
 import { ProjectEntity as Project } from '../../domain/entities/project.entity';
+import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
+import { ProjectsOrderService } from './projects-order.service';
+import { UpdateProjectOrderDto } from '../dtos/update-project-order.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -12,31 +14,49 @@ export class ProjectsService {
   constructor(
     @Inject('DatabaseRepository')
     private readonly databaseRepository: DatabaseRepository<Project>,
+    private readonly projectOrderService: ProjectsOrderService,
   ) {}
 
   async getAllProjects(): Promise<Project[]> {
     return await this.databaseRepository.findAll(this.collectionName);
   }
 
+  private createResponse(
+    message: string,
+    status: number,
+    data?: any,
+  ): CustomResponse {
+    return { message, status, data };
+  }
+
   async getProject(id: string): Promise<Project> {
-    return await this.databaseRepository.findById(this.collectionName, id);
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    return project;
   }
 
   async createProject(
     createProjectDto: CreateProjectDto,
   ): Promise<CustomResponse> {
-    const createdProject = await this.databaseRepository.create(
+    const newProject = await this.projectOrderService.assignInitialOrder(
       this.collectionName,
       createProjectDto,
     );
 
-    const response: CustomResponse = {
-      message: 'Project successfully created!',
-      status: 200,
-      data: createdProject,
-    };
-
-    return response;
+    const createdProject = await this.databaseRepository.create(
+      this.collectionName,
+      newProject,
+    );
+    return this.createResponse(
+      'Project successfully created!',
+      201,
+      createdProject,
+    );
   }
 
   async updateProject(
@@ -48,24 +68,43 @@ export class ProjectsService {
       id,
       updateProjectDto,
     );
+    return this.createResponse(
+      `Project with id "${id}" successfully updated!`,
+      200,
+      updatedProject,
+    );
+  }
 
-    const response: CustomResponse = {
-      message: `Project with id "${id}" successfully updated!`,
-      status: 200,
-      data: updatedProject,
-    };
+  async updateProjectOrder(
+    id: string,
+    { newOrder, app }: UpdateProjectOrderDto,
+  ): Promise<CustomResponse> {
+    await this.projectOrderService.updateOrder(
+      this.collectionName,
+      id,
+      newOrder,
+      app,
+    );
 
-    return response;
+    return this.createResponse(`Project order updated successfully!`, 200);
   }
 
   async deleteProject(id: string): Promise<CustomResponse> {
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
     await this.databaseRepository.delete(this.collectionName, id);
 
-    const response: CustomResponse = {
-      message: `Project with id "${id}" successfully deleted!`,
-      status: 200,
-    };
+    await this.projectOrderService.reorderAfterDelete(
+      this.collectionName,
+      project.order,
+    );
 
-    return response;
+    return this.createResponse(
+      `Project with id "${id}" successfully deleted!`,
+      200,
+    );
   }
 }
