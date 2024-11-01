@@ -5,6 +5,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FirebaseAdminModule } from './modules/firebase/firebase-admin.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FirebaseAdminModule } from './modules/firebase/firebase-admin.module';
     }),
     FirebaseAdminModule,
     DatabaseModule,
+    StorageModule,
     ProjectsModule,
     PartnersModule,
     AuthModule,
