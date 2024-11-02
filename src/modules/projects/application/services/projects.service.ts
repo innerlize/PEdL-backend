@@ -6,6 +6,7 @@ import { ProjectEntity as Project } from '../../domain/entities/project.entity';
 import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
 import { ProjectsOrderService } from './projects-order.service';
 import { UpdateProjectOrderDto } from '../dtos/update-project-order.dto';
+import { StorageRepository } from 'src/common/domain/storage-repository.interface';
 
 @Injectable()
 export class ProjectsService {
@@ -14,6 +15,8 @@ export class ProjectsService {
   constructor(
     @Inject('DatabaseRepository')
     private readonly databaseRepository: DatabaseRepository<Project>,
+    @Inject('StorageRepository')
+    private readonly storageRepository: StorageRepository,
     private readonly projectOrderService: ProjectsOrderService,
   ) {}
 
