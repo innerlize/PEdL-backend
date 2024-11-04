@@ -6,6 +6,7 @@ import { PartnersModule } from './modules/partners/partners.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FirebaseAdminModule } from './modules/firebase/firebase-admin.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { StorageModule } from './modules/storage/storage.module';
     ProjectsModule,
     PartnersModule,
     AuthModule,
+    NestjsFormDataModule,
   ],
 })
 export class AppModule {}
