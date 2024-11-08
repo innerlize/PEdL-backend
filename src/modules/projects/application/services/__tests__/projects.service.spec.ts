@@ -19,6 +19,8 @@ import { AuthGuard } from '../../../../../common/application/guards/auth.guard';
 import { ProjectsOrderService } from '../projects-order.service';
 import { UpdateProjectOrderDto } from '../../dtos/update-project-order.dto';
 import { AppNames } from '../../../../../common/domain/app-names.enum';
+import { StorageModule } from '../../../../storage/storage.module';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -34,6 +36,8 @@ describe('ProjectsService', () => {
           isGlobal: true,
         }),
         DatabaseModule,
+        NestjsFormDataModule,
+        StorageModule,
         AuthModule,
       ],
       providers: [ProjectsService, ProjectsOrderService],
