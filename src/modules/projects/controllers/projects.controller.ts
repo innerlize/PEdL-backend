@@ -76,4 +76,19 @@ export class ProjectsController {
   async deleteProject(@Param('id') id: string): Promise<CustomResponse> {
     return await this.projectsService.deleteProject(id);
   }
+
+  @UseGuards(AuthGuard)
+  @Delete('/:id/file')
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: CustomResponse })
+  async deleteFileFromProject(
+    @Param('id') id: string,
+    @Body() { fileUrl, fileType }: DeleteFileFromProjectDto,
+  ): Promise<void> {
+    return await this.projectsService.deleteFileFromProject(
+      id,
+      fileUrl,
+      fileType,
+    );
+  }
 }
