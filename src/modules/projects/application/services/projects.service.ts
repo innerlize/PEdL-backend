@@ -55,6 +55,10 @@ export class ProjectsService {
     return { message, status, data };
   }
 
+  async getAllProjects(): Promise<Project[]> {
+    return await this.databaseRepository.findAll(this.collectionName);
+  }
+
   async getProject(id: string): Promise<Project> {
     const project = await this.databaseRepository.findById(
       this.collectionName,
