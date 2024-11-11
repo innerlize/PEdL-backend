@@ -9,6 +9,9 @@ export interface DatabaseRepository<T> {
     collectionName: string,
     id: string,
   ): Promise<admin.firestore.DocumentReference<T>>;
+  getCollectionReference(
+    collectionName: string,
+  ): Promise<admin.firestore.CollectionReference>;
   create(collectionName: string, data: any): Promise<T>;
   update(collectionName: string, id: string, data: any): Promise<T>;
   delete(collectionName: string, id: string): Promise<void>;

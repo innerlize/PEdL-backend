@@ -82,6 +82,12 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
       .doc(id)) as admin.firestore.DocumentReference<T>;
   }
 
+  async getCollectionReference(
+    collectionName: string,
+  ): Promise<admin.firestore.CollectionReference> {
+    return this.firestore.collection(collectionName);
+  }
+
   async create(collectionName: string, data: any): Promise<T> {
     try {
       const docRef = await this.firestore.collection(collectionName).add(data);
