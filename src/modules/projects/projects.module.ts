@@ -5,9 +5,10 @@ import { ProjectsController } from './controllers/projects.controller';
 import { AuthModule } from '../auth/auth.module';
 import { ProjectsOrderService } from './application/services/projects-order.service';
 import { StorageModule } from '../storage/storage.module';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 @Module({
-  imports: [AuthModule, DatabaseModule, StorageModule],
+  imports: [AuthModule, DatabaseModule, StorageModule, NestjsFormDataModule],
   providers: [ProjectsService, ProjectsOrderService],
   controllers: [ProjectsController],
 })
