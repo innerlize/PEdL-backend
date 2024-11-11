@@ -73,20 +73,80 @@ export class ProjectsService {
   async createProject(
     createProjectDto: CreateProjectDto,
   ): Promise<CustomResponse> {
-    const newProject = await this.projectOrderService.assignInitialOrder(
+    try {
+      const projectAlreadyExists = await this.projectAlreadyExists(
+        createProjectDto.name,
+      );
+
+      if (projectAlreadyExists) {
+        throw new ConflictException(
+          `A project with name "${createProjectDto.name}" already exists.`,
+        );
+      }
+
+      const projectDtoMapper: Omit<
+        Project,
+        'id' | 'start_date' | 'end_date' | 'order' | 'media'
+      > = mapCreateProjectDtoToProject(createProjectDto);
+
+      const projectDtoWithInitialOrder =
+        await this.projectOrderService.assignInitialOrder(
       this.collectionName,
-      createProjectDto,
+          projectDtoMapper,
     );
 
-    const createdProject = await this.databaseRepository.create(
+      const projectRef = await this.databaseRepository.create(
       this.collectionName,
-      newProject,
-    );
-    return this.createResponse(
-      'Project successfully created!',
-      201,
-      createdProject,
-    );
+        { ...projectDtoWithInitialOrder },
+      );
+
+      const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
+      const storageVideosDirectoryPath = `projects/${projectRef.id}/media/videos`;
+
+      const uploadedImages = createProjectDto.imagesFiles?.length
+        ? await this.storageRepository.uploadFiles(
+            storageImagesDirectoryPath,
+            createProjectDto.imagesFiles,
+          )
+        : [];
+
+      const uploadedVideos = createProjectDto.videosFiles?.length
+        ? await this.storageRepository.uploadFiles(
+            storageVideosDirectoryPath,
+            createProjectDto.videosFiles,
+          )
+        : [];
+
+      const finalImagesUrls = [
+        ...(createProjectDto.imagesUrls || []),
+        ...uploadedImages,
+      ];
+      const finalVideosUrls = [
+        ...(createProjectDto.videosUrls || []),
+        ...uploadedVideos,
+      ];
+
+      const updatedProjectData = {
+        ...projectDtoWithInitialOrder,
+        media: {
+          images: finalImagesUrls,
+          videos: finalVideosUrls,
+        },
+      };
+
+      await this.databaseRepository.update(
+        this.collectionName,
+        projectRef.id,
+        updatedProjectData,
+      );
+
+      return this.createResponse('Project successfully created!', 201, {
+        id: projectRef.id,
+        ...updatedProjectData,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 
   async updateProject(
