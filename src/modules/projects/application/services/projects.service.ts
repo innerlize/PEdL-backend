@@ -1,4 +1,10 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateProjectDto } from '../dtos/create-project.dto';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
 import { CustomResponse } from '../../../../common/domain/custom-response.interface';
