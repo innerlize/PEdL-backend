@@ -128,6 +128,28 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
     }
   }
 
+  async appendMediaUrls(
+    collectionName: string,
+    id: string,
+    mediaType: 'images' | 'videos',
+    urls: string[],
+  ): Promise<void> {
+    try {
+      const docRef = this.firestore.collection(collectionName).doc(id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new NotFoundException(`Document with id "${id}" not found`);
+      }
+
+      await docRef.update({
+        [`media.${mediaType}`]: admin.firestore.FieldValue.arrayUnion(...urls),
+      });
+    } catch (e) {
+      throw new BadRequestException('Error updating document: ' + e.message);
+    }
+  }
+
   async delete(collectionName: string, id: string): Promise<void> {
     try {
       const docRef = this.firestore.collection(collectionName).doc(id);
