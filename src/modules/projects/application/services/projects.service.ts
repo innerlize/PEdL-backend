@@ -91,12 +91,12 @@ export class ProjectsService {
 
       const projectDtoWithInitialOrder =
         await this.projectOrderService.assignInitialOrder(
-      this.collectionName,
+          this.collectionName,
           projectDtoMapper,
-    );
+        );
 
       const projectRef = await this.databaseRepository.create(
-      this.collectionName,
+        this.collectionName,
         { ...projectDtoWithInitialOrder },
       );
 
@@ -232,11 +232,11 @@ export class ProjectsService {
           projectDtoMapper,
         );
 
-    return this.createResponse(
+        return this.createResponse(
           'Project successfully updated!',
-      200,
-      updatedProject,
-    );
+          200,
+          updatedProject,
+        );
       } catch (error) {
         console.error(error);
       }
@@ -273,8 +273,13 @@ export class ProjectsService {
       project.order,
     );
 
+    await this.storageRepository.deleteAllFilesFromFolder(
+      'projects',
+      project.id,
+    );
+
     return this.createResponse(
-      `Project with id "${id}" successfully deleted!`,
+      `Project with id "${id}" and associated files successfully deleted. Remaining projects have been reordered.`,
       200,
     );
   }
