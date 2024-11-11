@@ -16,6 +16,8 @@ import { CustomResponse } from '../../../common/domain/custom-response.interface
 import { AuthGuard } from '../../../common/application/guards/auth.guard';
 import { ApiTags, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UpdateProjectOrderDto } from '../application/dtos/update-project-order.dto';
+import { FormDataRequest } from 'nestjs-form-data';
+import { DeleteFileFromProjectDto } from '../application/dtos/delete-file-from-project.dto';
 
 @ApiTags('Projects')
 @Controller('api/projects')
@@ -36,6 +38,7 @@ export class ProjectsController {
 
   @UseGuards(AuthGuard)
   @Post('/')
+  @FormDataRequest()
   @ApiBearerAuth()
   @ApiOkResponse({ type: CustomResponse })
   async createProject(
@@ -46,6 +49,7 @@ export class ProjectsController {
 
   @UseGuards(AuthGuard)
   @Patch('/:id')
+  @FormDataRequest()
   @ApiBearerAuth()
   @ApiOkResponse({ type: CustomResponse })
   async updateProject(
