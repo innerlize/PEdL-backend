@@ -13,6 +13,10 @@ import { DatabaseRepository } from 'src/common/domain/database-repository.interf
 import { ProjectsOrderService } from './projects-order.service';
 import { UpdateProjectOrderDto } from '../dtos/update-project-order.dto';
 import { StorageRepository } from 'src/common/domain/storage-repository.interface';
+import {
+  mapCreateProjectDtoToProject,
+  mapUpdateProjectDtoToProject,
+} from '../mappers/from-dto-to-project.mapper';
 
 @Injectable()
 export class ProjectsService {
