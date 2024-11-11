@@ -137,4 +137,46 @@ export class ProjectsService {
       200,
     );
   }
+
+  async deleteFileFromProject(
+    id: string,
+    fileUrl: string,
+    fileType: 'image' | 'video',
+  ): Promise<void> {
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
+    const removeFileUrlFromMedia = (type: 'image' | 'video') => {
+      if (type === 'image') {
+        project.media.images = project.media.images.filter(
+          (imagePath) => imagePath !== fileUrl,
+        );
+      } else {
+        project.media.videos = project.media.videos.filter(
+          (videoPath) => videoPath !== fileUrl,
+        );
+      }
+    };
+
+    try {
+      await this.storageRepository.deleteFile(fileUrl);
+      removeFileUrlFromMedia(fileType);
+    } catch (error) {
+      if (
+        error.message.includes('No such object') ||
+        error.message.includes('Invalid file URL')
+      ) {
+        console.warn(
+          'File URL not found in storage, removing URL from project media...',
+        );
+        removeFileUrlFromMedia(fileType);
+      } else {
+        throw error;
+      }
+    }
+
+    await this.databaseRepository.update(this.collectionName, id, project);
+  }
 }
