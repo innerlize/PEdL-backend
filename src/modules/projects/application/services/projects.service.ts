@@ -153,16 +153,97 @@ export class ProjectsService {
     id: string,
     updateProjectDto: UpdateProjectDto,
   ): Promise<CustomResponse> {
-    const updatedProject = await this.databaseRepository.update(
+    const project = await this.databaseRepository.findById(
       this.collectionName,
       id,
-      updateProjectDto,
     );
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const projectDtoMapper: Partial<
+      Omit<Project, 'id' | 'start_date' | 'end_date' | 'order'>
+    > = mapUpdateProjectDtoToProject(updateProjectDto);
+
+    const projectNameWasChanged = project.name !== updateProjectDto.name;
+    const projectNameIsAlreadyInUse = await this.projectAlreadyExists(
+      updateProjectDto.name,
+    );
+
+    if (projectNameWasChanged && projectNameIsAlreadyInUse) {
+      throw new ConflictException(
+        `A project with name "${updateProjectDto.name}" already exists.`,
+      );
+    }
+
+    try {
+      const projectRef = await this.databaseRepository.getDocumentReference(
+        this.collectionName,
+        id,
+      );
+
+      if (updateProjectDto.imagesFiles?.length) {
+        const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
+        const uploadedImages = await this.storageRepository.uploadFiles(
+          storageImagesDirectoryPath,
+          updateProjectDto.imagesFiles,
+        );
+
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'images',
+          [...(updateProjectDto.imagesUrls ?? []), ...uploadedImages],
+        );
+      } else if (updateProjectDto.imagesUrls?.length) {
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'images',
+          updateProjectDto.imagesUrls,
+        );
+      }
+
+      if (updateProjectDto.videosFiles?.length) {
+        const storageVideosDirectoryPath = `projects/${projectRef.id}/media/videos`;
+        const uploadedVideos = await this.storageRepository.uploadFiles(
+          storageVideosDirectoryPath,
+          updateProjectDto.videosFiles,
+        );
+
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'videos',
+          [...(updateProjectDto.videosUrls ?? []), ...uploadedVideos],
+        );
+      } else if (updateProjectDto.videosUrls?.length) {
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'videos',
+          updateProjectDto.videosUrls,
+        );
+      }
+
+      try {
+        const updatedProject = await this.databaseRepository.update(
+          this.collectionName,
+          id,
+          projectDtoMapper,
+        );
+
     return this.createResponse(
-      `Project with id "${id}" successfully updated!`,
+          'Project successfully updated!',
       200,
       updatedProject,
     );
+      } catch (error) {
+        console.error(error);
+      }
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Error updating project', error);
+    }
   }
 
   async updateProjectOrder(
