@@ -20,8 +20,21 @@ export class ProjectsService {
     private readonly projectOrderService: ProjectsOrderService,
   ) {}
 
-  async getAllProjects(): Promise<Project[]> {
-    return await this.databaseRepository.findAll(this.collectionName);
+  private async projectAlreadyExists(projectName: string): Promise<boolean> {
+    try {
+      const projectsWithSameName = await this.databaseRepository.findByQuery(
+        this.collectionName,
+        {
+          field: 'name',
+          operator: '==',
+          value: projectName ?? '',
+        },
+      );
+
+      return projectsWithSameName.length > 0;
+    } catch (e) {
+      throw new Error('Error checking project name ' + e);
+    }
   }
 
   private createResponse(
