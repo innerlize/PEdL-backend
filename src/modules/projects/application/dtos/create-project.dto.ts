@@ -6,8 +6,8 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MediaDto } from './media.dto';
 import { LinkDto } from '../../../../common/application/dtos/link.dto';
+import { IsFiles, MemoryStoredFile } from 'nestjs-form-data';
 
 export class CreateProjectDto {
   @IsString()
@@ -27,9 +27,24 @@ export class CreateProjectDto {
   thumbnail: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => MediaDto)
-  media?: MediaDto;
+  @IsArray()
+  @IsString({ each: true })
+  imagesUrls?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsFiles({ each: true })
+  imagesFiles?: MemoryStoredFile[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  videosUrls?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsFiles({ each: true })
+  videosFiles?: MemoryStoredFile[];
 
   @IsDate()
   @Type(() => Date)
