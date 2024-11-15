@@ -97,7 +97,10 @@ export class ProjectsService {
 
       const projectRef = await this.databaseRepository.create(
         this.collectionName,
-        { ...projectDtoWithInitialOrder },
+        {
+          ...projectDtoWithInitialOrder,
+          visibility: { pedl: false, cofcof: false },
+        },
       );
 
       const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
