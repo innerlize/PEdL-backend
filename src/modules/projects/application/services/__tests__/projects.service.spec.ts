@@ -21,6 +21,7 @@ import { UpdateProjectOrderDto } from '../../dtos/update-project-order.dto';
 import { AppNames } from '../../../../../common/domain/app-names.enum';
 import { StorageModule } from '../../../../storage/storage.module';
 import { NestjsFormDataModule } from 'nestjs-form-data';
+import { UpdateProjectVisibilityParams } from '../../dtos/update-project-visibility.params';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -266,6 +267,65 @@ describe('ProjectsService', () => {
             }),
           );
           expect(res.body.data.name).not.toBe(project.name);
+        });
+    });
+
+    it('should successfully update the visibility of a project', async () => {
+      const project: CreateProjectDto = {
+        name: 'Project 1',
+        customer: 'Customer 1',
+        description: 'Description 1',
+        softwares: ['Software 1', 'Software 2'],
+        thumbnail: 'https://example.com/image.png',
+        start_date: new Date('2023-01-01'),
+        end_date: new Date('2023-06-30'),
+      };
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(project);
+      console.log(
+        'Esta es la createResponse.body.data.visibility',
+        createResponse,
+      );
+
+      const updateProjectVisibilityParams: UpdateProjectVisibilityParams = {
+        id: createResponse.body.data.id,
+        app: AppNames.PEDL,
+      };
+
+      await request(app.getHttpServer())
+        .patch(
+          `/api/projects/${updateProjectVisibilityParams.id}/visibility/${updateProjectVisibilityParams.app}`,
+        )
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send()
+        .then((res) => {
+          expect(res.status).toBe(200);
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              message: expect.any(String),
+              status: expect.any(Number),
+            }),
+          );
+        });
+
+      await request(app.getHttpServer())
+        .get(`/api/projects/${updateProjectVisibilityParams.id}`)
+        .then((res) => {
+          console.log('Esta es la res', res.body);
+          expect(res.status).toBe(200);
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              id: updateProjectVisibilityParams.id,
+              name: project.name,
+              visibility: expect.objectContaining({
+                pedl: !createResponse.body.data.visibility.pedl,
+                cofcof: expect.any(Boolean),
+              }),
+            }),
+          );
         });
     });
 
