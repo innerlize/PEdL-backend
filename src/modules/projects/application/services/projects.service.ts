@@ -17,6 +17,7 @@ import {
   mapCreateProjectDtoToProject,
   mapUpdateProjectDtoToProject,
 } from '../mappers/from-dto-to-project.mapper';
+import { AppNames } from 'src/common/domain/app-names.enum';
 
 @Injectable()
 export class ProjectsService {
@@ -261,6 +262,21 @@ export class ProjectsService {
     );
 
     return this.createResponse(`Project order updated successfully!`, 200);
+  }
+
+  async updateProjectVisibility(id: string, app: AppNames): Promise<void> {
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const updatedVisibility = !project.visibility?.[app];
+
+    await this.databaseRepository.update(this.collectionName, id, {
+      [`visibility.${app}`]: updatedVisibility,
+    });
   }
 
   async deleteProject(id: string): Promise<CustomResponse> {
