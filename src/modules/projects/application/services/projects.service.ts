@@ -267,10 +267,13 @@ export class ProjectsService {
       app,
     );
 
-    return this.createResponse(`Project order updated successfully!`, 200);
+    return this.createResponse(`Project order successfully updated!`, 200);
   }
 
-  async updateProjectVisibility(id: string, app: AppNames): Promise<void> {
+  async updateProjectVisibility(
+    id: string,
+    app: AppNames,
+  ): Promise<CustomResponse> {
     const project = await this.databaseRepository.findById(
       this.collectionName,
       id,
@@ -283,6 +286,8 @@ export class ProjectsService {
     await this.databaseRepository.update(this.collectionName, id, {
       [`visibility.${app}`]: updatedVisibility,
     });
+
+    return this.createResponse(`Project visibility successfully updated`, 200);
   }
 
   async deleteProject(id: string): Promise<CustomResponse> {
