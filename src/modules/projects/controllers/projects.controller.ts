@@ -18,6 +18,7 @@ import { ApiTags, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UpdateProjectOrderDto } from '../application/dtos/update-project-order.dto';
 import { FormDataRequest } from 'nestjs-form-data';
 import { DeleteFileFromProjectDto } from '../application/dtos/delete-file-from-project.dto';
+import { UpdateProjectVisibilityParams } from '../application/dtos/update-project-visibility.params';
 
 @ApiTags('Projects')
 @Controller('api/projects')
@@ -71,6 +72,16 @@ export class ProjectsController {
       id,
       updateProjectOrderDto,
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('/:id/visibility/:app')
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: CustomResponse })
+  async updateProjectVisibility(
+    @Param() { id, app }: UpdateProjectVisibilityParams,
+  ): Promise<void> {
+    return await this.projectsService.updateProjectVisibility(id, app);
   }
 
   @UseGuards(AuthGuard)
