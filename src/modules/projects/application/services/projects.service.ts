@@ -86,7 +86,7 @@ export class ProjectsService {
 
       const projectDtoMapper: Omit<
         Project,
-        'id' | 'start_date' | 'end_date' | 'order' | 'media'
+        'id' | 'start_date' | 'end_date' | 'order' | 'media' | 'visibility'
       > = mapCreateProjectDtoToProject(createProjectDto);
 
       const projectDtoWithInitialOrder =

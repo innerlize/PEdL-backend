@@ -3,7 +3,10 @@ import { CreateProjectDto } from '../dtos/create-project.dto';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
 
 interface MappedProject
-  extends Omit<Project, 'id' | 'start_date' | 'end_date' | 'order'> {
+  extends Omit<
+    Project,
+    'id' | 'start_date' | 'end_date' | 'order' | 'visibility'
+  > {
   start_date: Date;
   end_date: Date;
 }
@@ -31,9 +34,11 @@ export function mapCreateProjectDtoToProject(
 
 export function mapUpdateProjectDtoToProject(
   dto: UpdateProjectDto,
-): Partial<Omit<Project, 'id' | 'start_date' | 'end_date' | 'order'>> {
+): Partial<
+  Omit<Project, 'id' | 'start_date' | 'end_date' | 'order' | 'visibility'>
+> {
   const project: Partial<
-    Omit<Project, 'id' | 'start_date' | 'end_date' | 'order'>
+    Omit<Project, 'id' | 'start_date' | 'end_date' | 'order' | 'visibility'>
   > = {};
 
   if (dto.name) project.name = dto.name;
