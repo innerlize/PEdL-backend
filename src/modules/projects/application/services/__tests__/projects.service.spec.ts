@@ -19,6 +19,8 @@ import { AuthGuard } from '../../../../../common/application/guards/auth.guard';
 import { ProjectsOrderService } from '../projects-order.service';
 import { UpdateProjectOrderDto } from '../../dtos/update-project-order.dto';
 import { AppNames } from '../../../../../common/domain/app-names.enum';
+import { StorageModule } from '../../../../storage/storage.module';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -34,6 +36,8 @@ describe('ProjectsService', () => {
           isGlobal: true,
         }),
         DatabaseModule,
+        NestjsFormDataModule,
+        StorageModule,
         AuthModule,
       ],
       providers: [ProjectsService, ProjectsOrderService],
@@ -46,6 +50,7 @@ describe('ProjectsService', () => {
     testEnv = await initializeTestEnvironment({
       projectId: process.env.GCLOUD_PROJECT,
     });
+
     service = module.get<ProjectsService>(ProjectsService);
     app = module.createNestApplication();
 
@@ -56,6 +61,7 @@ describe('ProjectsService', () => {
     await clearAuth();
     testIdToken = '';
     await testEnv.clearFirestore();
+    await testEnv.clearStorage();
 
     const idToken = await loginAsAdmin();
     testIdToken = idToken;
@@ -64,6 +70,8 @@ describe('ProjectsService', () => {
   afterAll(async () => {
     await clearAuth();
     testIdToken = '';
+    await testEnv.clearFirestore();
+    await testEnv.clearStorage();
     await testEnv.cleanup();
     await app.close();
   });
@@ -196,66 +204,218 @@ describe('ProjectsService', () => {
         expect(res.status).toBe(201);
         expect(res.body).toEqual(
           expect.objectContaining({
-            message: expect.any(String),
-            status: expect.any(Number),
             data: expect.objectContaining({
-              id: expect.any(String),
-              name: expect.any(String),
               customer: expect.any(String),
               description: expect.any(String),
-              softwares: expect.any(Array),
-              thumbnail: expect.any(String),
-              start_date: expect.anything(),
-              end_date: expect.anything(),
+              end_date: expect.any(String),
+              id: expect.any(String),
+              name: expect.any(String),
               order: expect.objectContaining({
-                pedl: expect.any(Number),
                 cofcof: expect.any(Number),
+                pedl: expect.any(Number),
               }),
-              created_at: expect.anything(),
-              updated_at: expect.anything(),
+              softwares: expect.arrayContaining([expect.any(String)]),
+              start_date: expect.any(String),
+              thumbnail: expect.any(String),
             }),
+            message: expect.any(String),
+            status: expect.any(Number),
           }),
         );
       });
   });
 
-  it('should update a project', async () => {
-    const project: CreateProjectDto = {
-      name: 'Project 1',
-      customer: 'Customer 1',
-      description: 'Description 1',
-      softwares: ['Software 1', 'Software 2'],
-      thumbnail: 'https://example.com/image.png',
-      start_date: new Date('2023-01-01'),
-      end_date: new Date('2023-06-30'),
-    };
+  describe('Project update', () => {
+    beforeEach(async () => {
+      await testEnv.clearStorage();
+    });
 
-    const createResponse = await request(app.getHttpServer())
-      .post('/api/projects')
-      .set('Authorization', `Bearer ${testIdToken}`)
-      .send(project);
+    it('should successfully update a property of a project', async () => {
+      const project: CreateProjectDto = {
+        name: 'Project 1',
+        customer: 'Customer 1',
+        description: 'Description 1',
+        softwares: ['Software 1', 'Software 2'],
+        thumbnail: 'https://example.com/image.png',
+        start_date: new Date('2023-01-01'),
+        end_date: new Date('2023-06-30'),
+      };
 
-    const updatedProjectDto: UpdateProjectDto = {
-      name: 'Project 1 - Updated',
-    };
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(project);
 
-    await request(app.getHttpServer())
-      .patch(`/api/projects/${createResponse.body.data.id}`)
-      .set('Authorization', `Bearer ${testIdToken}`)
-      .send(updatedProjectDto)
-      .then((res) => {
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual(
-          expect.objectContaining({
-            message: expect.any(String),
-            status: expect.any(Number),
-            data: expect.objectContaining({
-              name: updatedProjectDto.name,
+      const updatedProjectDto: UpdateProjectDto = {
+        name: 'Project 1 - Updated',
+      };
+
+      await request(app.getHttpServer())
+        .patch(`/api/projects/${createResponse.body.data.id}`)
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(updatedProjectDto)
+        .then((res) => {
+          expect(res.status).toBe(200);
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              message: expect.any(String),
+              status: expect.any(Number),
+              data: expect.objectContaining({
+                name: updatedProjectDto.name,
+              }),
             }),
-          }),
-        );
-        expect(res.body.data.name).not.toBe(project.name);
-      });
+          );
+          expect(res.body.data.name).not.toBe(project.name);
+        });
+    });
+
+    it("should successfully upload a new file and update project's media property", async () => {
+      const project: CreateProjectDto = {
+        name: 'Project 1',
+        customer: 'Customer 1',
+        description: 'Description 1',
+        softwares: ['Software 1', 'Software 2'],
+        thumbnail: 'https://example.com/image.png',
+        imagesUrls: [
+          'https://example.com/image1.jpg',
+          'https://example.com/image2.jpg',
+        ],
+        start_date: new Date('2023-01-01'),
+        end_date: new Date('2023-06-30'),
+      };
+
+      const fileName = 'mock-image.jpg';
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(project);
+
+      await request(app.getHttpServer())
+        .patch(`/api/projects/${createResponse.body.data.id}`)
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .field('name', 'Updated Project Name')
+        .attach('imagesFiles[]', Buffer.from('...'), {
+          filename: fileName,
+          contentType: 'image/jpeg',
+        })
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              message: 'Project successfully updated!',
+              status: 200,
+              data: expect.objectContaining({
+                id: expect.any(String),
+                name: expect.any(String),
+                customer: expect.any(String),
+                description: expect.any(String),
+                softwares: expect.arrayContaining([expect.any(String)]),
+                media: expect.objectContaining({
+                  images: expect.arrayContaining([
+                    ...project.imagesUrls,
+                    expect.stringContaining(fileName),
+                  ]),
+                }),
+                start_date: expect.any(String),
+                end_date: expect.any(String),
+                thumbnail: expect.any(String),
+                order: expect.objectContaining({
+                  cofcof: expect.any(Number),
+                  pedl: expect.any(Number),
+                }),
+                created_at: expect.objectContaining({
+                  _seconds: expect.any(Number),
+                  _nanoseconds: expect.any(Number),
+                }),
+                updated_at: expect.objectContaining({
+                  _seconds: expect.any(Number),
+                  _nanoseconds: expect.any(Number),
+                }),
+              }),
+            }),
+          );
+
+          expect(res.body.data.images).not.toEqual([]);
+          expect(res.body.data.images).not.toBe(
+            createResponse.body.data.media.images,
+          );
+        });
+    });
+
+    it("should successfully upload a new video and update project's media property", async () => {
+      const project: CreateProjectDto = {
+        name: 'Project 1',
+        customer: 'Customer 1',
+        description: 'Description 1',
+        softwares: ['Software 1', 'Software 2'],
+        thumbnail: 'https://example.com/image.png',
+        videosUrls: [
+          'https://example.com/video1.mp4',
+          'https://example.com/video2.mp4',
+        ],
+        start_date: new Date('2023-01-01'),
+        end_date: new Date('2023-06-30'),
+      };
+
+      const fileName = 'mock-video.mp4';
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .send(project);
+
+      await request(app.getHttpServer())
+        .patch(`/api/projects/${createResponse.body.data.id}`)
+        .set('Authorization', `Bearer ${testIdToken}`)
+        .field('name', 'Updated Project Name')
+        .attach('videosFiles[]', Buffer.from('...'), {
+          filename: fileName,
+          contentType: 'video/mp4',
+        })
+        .expect(200)
+        .then((res) => {
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              message: 'Project successfully updated!',
+              status: 200,
+              data: expect.objectContaining({
+                id: expect.any(String),
+                name: expect.any(String),
+                customer: expect.any(String),
+                description: expect.any(String),
+                softwares: expect.arrayContaining([expect.any(String)]),
+                media: expect.objectContaining({
+                  videos: expect.arrayContaining([
+                    ...project.videosUrls,
+                    expect.stringContaining(fileName),
+                  ]),
+                }),
+                start_date: expect.any(String),
+                end_date: expect.any(String),
+                thumbnail: expect.any(String),
+                order: expect.objectContaining({
+                  cofcof: expect.any(Number),
+                  pedl: expect.any(Number),
+                }),
+                created_at: expect.objectContaining({
+                  _seconds: expect.any(Number),
+                  _nanoseconds: expect.any(Number),
+                }),
+                updated_at: expect.objectContaining({
+                  _seconds: expect.any(Number),
+                  _nanoseconds: expect.any(Number),
+                }),
+              }),
+            }),
+          );
+
+          expect(res.body.data.videos).not.toEqual([]);
+          expect(res.body.data.videos).not.toBe(
+            createResponse.body.data.media.videos,
+          );
+        });
+    });
   });
 
   describe('Project order', () => {

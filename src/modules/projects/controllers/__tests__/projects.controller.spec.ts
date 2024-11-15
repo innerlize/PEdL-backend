@@ -5,6 +5,7 @@ import { CreateProjectDto } from '../../application/dtos/create-project.dto';
 import { UpdateProjectDto } from '../../application/dtos/update-project.dto';
 import { Project } from '../../domain/interfaces/project.interface';
 import { AuthGuard } from '../../../../common/application/guards/auth.guard';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -12,6 +13,7 @@ describe('ProjectsController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [NestjsFormDataModule],
       controllers: [ProjectsController],
       providers: [
         {

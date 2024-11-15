@@ -82,6 +82,12 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
       .doc(id)) as admin.firestore.DocumentReference<T>;
   }
 
+  async getCollectionReference(
+    collectionName: string,
+  ): Promise<admin.firestore.CollectionReference> {
+    return this.firestore.collection(collectionName);
+  }
+
   async create(collectionName: string, data: any): Promise<T> {
     try {
       const docRef = await this.firestore.collection(collectionName).add(data);
@@ -117,6 +123,28 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
         created_at: doc.createTime,
         updated_at: doc.updateTime,
       } as T;
+    } catch (e) {
+      throw new BadRequestException('Error updating document: ' + e.message);
+    }
+  }
+
+  async appendMediaUrls(
+    collectionName: string,
+    id: string,
+    mediaType: 'images' | 'videos',
+    urls: string[],
+  ): Promise<void> {
+    try {
+      const docRef = this.firestore.collection(collectionName).doc(id);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new NotFoundException(`Document with id "${id}" not found`);
+      }
+
+      await docRef.update({
+        [`media.${mediaType}`]: admin.firestore.FieldValue.arrayUnion(...urls),
+      });
     } catch (e) {
       throw new BadRequestException('Error updating document: ' + e.message);
     }

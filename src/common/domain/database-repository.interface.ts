@@ -9,8 +9,17 @@ export interface DatabaseRepository<T> {
     collectionName: string,
     id: string,
   ): Promise<admin.firestore.DocumentReference<T>>;
+  getCollectionReference(
+    collectionName: string,
+  ): Promise<admin.firestore.CollectionReference>;
   create(collectionName: string, data: any): Promise<T>;
   update(collectionName: string, id: string, data: any): Promise<T>;
+  appendMediaUrls(
+    collectionName: string,
+    id: string,
+    mediaType: 'images' | 'videos',
+    urls: string[],
+  ): Promise<void>;
   delete(collectionName: string, id: string): Promise<void>;
   batch(): Promise<admin.firestore.WriteBatch>;
 }

@@ -1,4 +1,10 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateProjectDto } from '../dtos/create-project.dto';
 import { UpdateProjectDto } from '../dtos/update-project.dto';
 import { CustomResponse } from '../../../../common/domain/custom-response.interface';
@@ -6,6 +12,11 @@ import { ProjectEntity as Project } from '../../domain/entities/project.entity';
 import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
 import { ProjectsOrderService } from './projects-order.service';
 import { UpdateProjectOrderDto } from '../dtos/update-project-order.dto';
+import { StorageRepository } from 'src/common/domain/storage-repository.interface';
+import {
+  mapCreateProjectDtoToProject,
+  mapUpdateProjectDtoToProject,
+} from '../mappers/from-dto-to-project.mapper';
 
 @Injectable()
 export class ProjectsService {
@@ -14,11 +25,26 @@ export class ProjectsService {
   constructor(
     @Inject('DatabaseRepository')
     private readonly databaseRepository: DatabaseRepository<Project>,
+    @Inject('StorageRepository')
+    private readonly storageRepository: StorageRepository,
     private readonly projectOrderService: ProjectsOrderService,
   ) {}
 
-  async getAllProjects(): Promise<Project[]> {
-    return await this.databaseRepository.findAll(this.collectionName);
+  private async projectAlreadyExists(projectName: string): Promise<boolean> {
+    try {
+      const projectsWithSameName = await this.databaseRepository.findByQuery(
+        this.collectionName,
+        {
+          field: 'name',
+          operator: '==',
+          value: projectName ?? '',
+        },
+      );
+
+      return projectsWithSameName.length > 0;
+    } catch (e) {
+      throw new Error('Error checking project name ' + e);
+    }
   }
 
   private createResponse(
@@ -27,6 +53,10 @@ export class ProjectsService {
     data?: any,
   ): CustomResponse {
     return { message, status, data };
+  }
+
+  async getAllProjects(): Promise<Project[]> {
+    return await this.databaseRepository.findAll(this.collectionName);
   }
 
   async getProject(id: string): Promise<Project> {
@@ -43,36 +73,177 @@ export class ProjectsService {
   async createProject(
     createProjectDto: CreateProjectDto,
   ): Promise<CustomResponse> {
-    const newProject = await this.projectOrderService.assignInitialOrder(
-      this.collectionName,
-      createProjectDto,
-    );
+    try {
+      const projectAlreadyExists = await this.projectAlreadyExists(
+        createProjectDto.name,
+      );
 
-    const createdProject = await this.databaseRepository.create(
-      this.collectionName,
-      newProject,
-    );
-    return this.createResponse(
-      'Project successfully created!',
-      201,
-      createdProject,
-    );
+      if (projectAlreadyExists) {
+        throw new ConflictException(
+          `A project with name "${createProjectDto.name}" already exists.`,
+        );
+      }
+
+      const projectDtoMapper: Omit<
+        Project,
+        'id' | 'start_date' | 'end_date' | 'order' | 'media'
+      > = mapCreateProjectDtoToProject(createProjectDto);
+
+      const projectDtoWithInitialOrder =
+        await this.projectOrderService.assignInitialOrder(
+          this.collectionName,
+          projectDtoMapper,
+        );
+
+      const projectRef = await this.databaseRepository.create(
+        this.collectionName,
+        { ...projectDtoWithInitialOrder },
+      );
+
+      const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
+      const storageVideosDirectoryPath = `projects/${projectRef.id}/media/videos`;
+
+      const uploadedImages = createProjectDto.imagesFiles?.length
+        ? await this.storageRepository.uploadFiles(
+            storageImagesDirectoryPath,
+            createProjectDto.imagesFiles,
+          )
+        : [];
+
+      const uploadedVideos = createProjectDto.videosFiles?.length
+        ? await this.storageRepository.uploadFiles(
+            storageVideosDirectoryPath,
+            createProjectDto.videosFiles,
+          )
+        : [];
+
+      const finalImagesUrls = [
+        ...(createProjectDto.imagesUrls || []),
+        ...uploadedImages,
+      ];
+      const finalVideosUrls = [
+        ...(createProjectDto.videosUrls || []),
+        ...uploadedVideos,
+      ];
+
+      const updatedProjectData = {
+        ...projectDtoWithInitialOrder,
+        media: {
+          images: finalImagesUrls,
+          videos: finalVideosUrls,
+        },
+      };
+
+      await this.databaseRepository.update(
+        this.collectionName,
+        projectRef.id,
+        updatedProjectData,
+      );
+
+      return this.createResponse('Project successfully created!', 201, {
+        id: projectRef.id,
+        ...updatedProjectData,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 
   async updateProject(
     id: string,
     updateProjectDto: UpdateProjectDto,
   ): Promise<CustomResponse> {
-    const updatedProject = await this.databaseRepository.update(
+    const project = await this.databaseRepository.findById(
       this.collectionName,
       id,
-      updateProjectDto,
     );
-    return this.createResponse(
-      `Project with id "${id}" successfully updated!`,
-      200,
-      updatedProject,
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const projectDtoMapper: Partial<
+      Omit<Project, 'id' | 'start_date' | 'end_date' | 'order'>
+    > = mapUpdateProjectDtoToProject(updateProjectDto);
+
+    const projectNameWasChanged = project.name !== updateProjectDto.name;
+    const projectNameIsAlreadyInUse = await this.projectAlreadyExists(
+      updateProjectDto.name,
     );
+
+    if (projectNameWasChanged && projectNameIsAlreadyInUse) {
+      throw new ConflictException(
+        `A project with name "${updateProjectDto.name}" already exists.`,
+      );
+    }
+
+    try {
+      const projectRef = await this.databaseRepository.getDocumentReference(
+        this.collectionName,
+        id,
+      );
+
+      if (updateProjectDto.imagesFiles?.length) {
+        const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
+        const uploadedImages = await this.storageRepository.uploadFiles(
+          storageImagesDirectoryPath,
+          updateProjectDto.imagesFiles,
+        );
+
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'images',
+          [...(updateProjectDto.imagesUrls ?? []), ...uploadedImages],
+        );
+      } else if (updateProjectDto.imagesUrls?.length) {
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'images',
+          updateProjectDto.imagesUrls,
+        );
+      }
+
+      if (updateProjectDto.videosFiles?.length) {
+        const storageVideosDirectoryPath = `projects/${projectRef.id}/media/videos`;
+        const uploadedVideos = await this.storageRepository.uploadFiles(
+          storageVideosDirectoryPath,
+          updateProjectDto.videosFiles,
+        );
+
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'videos',
+          [...(updateProjectDto.videosUrls ?? []), ...uploadedVideos],
+        );
+      } else if (updateProjectDto.videosUrls?.length) {
+        await this.databaseRepository.appendMediaUrls(
+          this.collectionName,
+          id,
+          'videos',
+          updateProjectDto.videosUrls,
+        );
+      }
+
+      try {
+        const updatedProject = await this.databaseRepository.update(
+          this.collectionName,
+          id,
+          projectDtoMapper,
+        );
+
+        return this.createResponse(
+          'Project successfully updated!',
+          200,
+          updatedProject,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Error updating project', error);
+    }
   }
 
   async updateProjectOrder(
@@ -102,9 +273,56 @@ export class ProjectsService {
       project.order,
     );
 
+    await this.storageRepository.deleteAllFilesFromFolder(
+      'projects',
+      project.id,
+    );
+
     return this.createResponse(
-      `Project with id "${id}" successfully deleted!`,
+      `Project with id "${id}" and associated files successfully deleted. Remaining projects have been reordered.`,
       200,
     );
+  }
+
+  async deleteFileFromProject(
+    id: string,
+    fileUrl: string,
+    fileType: 'image' | 'video',
+  ): Promise<void> {
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
+    const removeFileUrlFromMedia = (type: 'image' | 'video') => {
+      if (type === 'image') {
+        project.media.images = project.media.images.filter(
+          (imagePath) => imagePath !== fileUrl,
+        );
+      } else {
+        project.media.videos = project.media.videos.filter(
+          (videoPath) => videoPath !== fileUrl,
+        );
+      }
+    };
+
+    try {
+      await this.storageRepository.deleteFile(fileUrl);
+      removeFileUrlFromMedia(fileType);
+    } catch (error) {
+      if (
+        error.message.includes('No such object') ||
+        error.message.includes('Invalid file URL')
+      ) {
+        console.warn(
+          'File URL not found in storage, removing URL from project media...',
+        );
+        removeFileUrlFromMedia(fileType);
+      } else {
+        throw error;
+      }
+    }
+
+    await this.databaseRepository.update(this.collectionName, id, project);
   }
 }

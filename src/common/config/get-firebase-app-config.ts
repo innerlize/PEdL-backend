@@ -30,6 +30,8 @@ export const getFirebaseAppConfig = async (): Promise<admin.AppOptions> => {
 
   const config: admin.AppOptions = {
     credential: admin.credential.applicationDefault(),
+    storageBucket:
+      (isDevelopment || isTesting) && `gs://demo-project.appspot.com`,
   };
 
   return config;
