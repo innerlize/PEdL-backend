@@ -285,10 +285,6 @@ describe('ProjectsService', () => {
         .post('/api/projects')
         .set('Authorization', `Bearer ${testIdToken}`)
         .send(project);
-      console.log(
-        'Esta es la createResponse.body.data.visibility',
-        createResponse,
-      );
 
       const updateProjectVisibilityParams: UpdateProjectVisibilityParams = {
         id: createResponse.body.data.id,
@@ -314,7 +310,6 @@ describe('ProjectsService', () => {
       await request(app.getHttpServer())
         .get(`/api/projects/${updateProjectVisibilityParams.id}`)
         .then((res) => {
-          console.log('Esta es la res', res.body);
           expect(res.status).toBe(200);
           expect(res.body).toEqual(
             expect.objectContaining({
