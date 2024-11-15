@@ -17,7 +17,7 @@ import {
   mapCreateProjectDtoToProject,
   mapUpdateProjectDtoToProject,
 } from '../mappers/from-dto-to-project.mapper';
-import { AppNames } from 'src/common/domain/app-names.enum';
+import { AppNames } from '../../../../common/domain/app-names.enum';
 
 @Injectable()
 export class ProjectsService {
