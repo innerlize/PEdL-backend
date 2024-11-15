@@ -59,6 +59,10 @@ describe('ProjectsController', () => {
           seconds: 1835689600,
           nanoseconds: 0,
         },
+        order: {
+          pedl: 1,
+          cofcof: 1,
+        },
       },
     ];
 
@@ -84,6 +88,10 @@ describe('ProjectsController', () => {
       end_date: {
         seconds: 1835689600,
         nanoseconds: 0,
+      },
+      order: {
+        pedl: 1,
+        cofcof: 1,
       },
     };
 

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { DatabaseRepository } from '../../../../common/domain/database-repository.interface';
+import { QueryOptions } from '../../domain/interfaces/query-options.interface';
 
 @Injectable()
 export class FirestoreRepository<T> implements DatabaseRepository<T> {
@@ -25,9 +26,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
         (doc) =>
           ({
             id: doc.id,
+            ...doc.data(),
             created_at: doc.createTime,
             updated_at: doc.updateTime,
-            ...doc.data(),
           }) as T,
       );
     } catch (e) {
@@ -44,10 +45,41 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
     return {
       id: doc.id,
+      ...doc.data(),
       created_at: doc.createTime,
       updated_at: doc.updateTime,
-      ...doc.data(),
     } as T;
+  }
+
+  async findByQuery(
+    collectionName: string,
+    queryOptions: QueryOptions,
+  ): Promise<T[]> {
+    try {
+      const collectionRef = this.firestore.collection(collectionName);
+
+      const snapshot = await collectionRef
+        .where(queryOptions.field, queryOptions.operator, queryOptions.value)
+        .get();
+
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        created_at: doc.createTime,
+        updated_at: doc.updateTime,
+      })) as T[];
+    } catch (e) {
+      throw new BadRequestException('Error querying documents: ' + e.message);
+    }
+  }
+
+  async getDocumentReference(
+    collectionName: string,
+    id: string,
+  ): Promise<admin.firestore.DocumentReference<T>> {
+    return (await this.firestore
+      .collection(collectionName)
+      .doc(id)) as admin.firestore.DocumentReference<T>;
   }
 
   async create(collectionName: string, data: any): Promise<T> {
@@ -57,9 +89,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
       return {
         id: doc.id,
+        ...doc.data(),
         created_at: doc.createTime,
         updated_at: doc.updateTime,
-        ...doc.data(),
       } as T;
     } catch (e) {
       throw new BadRequestException('Error creating document: ' + e.message);
@@ -81,9 +113,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
 
       return {
         id: updatedDoc.id,
+        ...updatedDoc.data(),
         created_at: doc.createTime,
         updated_at: doc.updateTime,
-        ...updatedDoc.data(),
       } as T;
     } catch (e) {
       throw new BadRequestException('Error updating document: ' + e.message);
@@ -103,5 +135,9 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
     } catch (e) {
       throw new BadRequestException('Error deleting document: ' + e.message);
     }
+  }
+
+  async batch(): Promise<admin.firestore.WriteBatch> {
+    return this.firestore.batch();
   }
 }
