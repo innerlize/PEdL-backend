@@ -80,7 +80,7 @@ export class ProjectsController {
   @ApiOkResponse({ type: CustomResponse })
   async updateProjectVisibility(
     @Param() { id, app }: UpdateProjectVisibilityParams,
-  ): Promise<void> {
+  ): Promise<CustomResponse> {
     return await this.projectsService.updateProjectVisibility(id, app);
   }
 

@@ -144,10 +144,16 @@ export class ProjectsService {
         updatedProjectData,
       );
 
-      return this.createResponse('Project successfully created!', 201, {
-        id: projectRef.id,
-        ...updatedProjectData,
-      });
+      const finalProject = await this.databaseRepository.findById(
+        this.collectionName,
+        projectRef.id,
+      );
+
+      return this.createResponse(
+        'Project successfully created!',
+        201,
+        finalProject,
+      );
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
