@@ -27,6 +27,7 @@ export function mapCreateProjectDtoToProject(
     start_date: dto.start_date,
     end_date: dto.end_date,
     links: dto.links || [],
+    category: dto.category,
   };
 
   return project;
@@ -47,6 +48,7 @@ export function mapUpdateProjectDtoToProject(
   if (dto.thumbnail) project.thumbnail = dto.thumbnail;
   if (dto.softwares) project.softwares = dto.softwares;
   if (dto.links) project.links = dto.links;
+  if (dto.category) project.category = dto.category;
 
   return project;
 }
