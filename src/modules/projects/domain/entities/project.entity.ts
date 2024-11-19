@@ -3,6 +3,7 @@ import { Link } from '../../../../common/domain/link.interface';
 import { Timestamp } from '../../../../common/domain/timestamp.interface';
 import { ProjectOrderByApp } from '../interfaces/project-order-by-app.interface';
 import { ProjectVisibilityByApp } from '../interfaces/project-visibility-by-app.interface';
+import { Category } from '../interfaces/category.enum';
 
 export class ProjectEntity {
   id: string;
@@ -17,4 +18,5 @@ export class ProjectEntity {
   links?: Link[];
   order: ProjectOrderByApp;
   visibility: ProjectVisibilityByApp;
+  category: Category;
 }
