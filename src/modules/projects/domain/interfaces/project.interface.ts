@@ -4,6 +4,7 @@ import { Timestamp } from '../../../../common/domain/timestamp.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectOrderByApp } from './project-order-by-app.interface';
 import { ProjectVisibilityByApp } from './project-visibility-by-app.interface';
+import { Category } from './category.enum';
 
 export class Project {
   @ApiProperty()
@@ -41,4 +42,7 @@ export class Project {
 
   @ApiProperty()
   visibility: ProjectVisibilityByApp;
+
+  @ApiProperty()
+  category: Category;
 }
