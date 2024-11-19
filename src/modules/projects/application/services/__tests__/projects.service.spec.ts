@@ -22,6 +22,7 @@ import { AppNames } from '../../../../../common/domain/app-names.enum';
 import { StorageModule } from '../../../../storage/storage.module';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 import { UpdateProjectVisibilityParams } from '../../dtos/update-project-visibility.params';
+import { Category } from '../../../domain/interfaces/category.enum';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -91,6 +92,7 @@ describe('ProjectsService', () => {
         thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       },
       {
         name: 'Project 2',
@@ -100,6 +102,7 @@ describe('ProjectsService', () => {
         thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-02-01'),
         end_date: new Date('2023-07-31'),
+        category: Category.GAME,
       },
     ];
 
@@ -147,6 +150,7 @@ describe('ProjectsService', () => {
       thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
+      category: Category.MOVIE,
     };
 
     const createResponse = await request(app.getHttpServer())
@@ -195,6 +199,7 @@ describe('ProjectsService', () => {
       thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
+      category: Category.MOVIE,
     };
 
     await request(app.getHttpServer())
@@ -205,6 +210,8 @@ describe('ProjectsService', () => {
         expect(res.status).toBe(201);
         expect(res.body).toEqual(
           expect.objectContaining({
+            message: expect.any(String),
+            status: expect.any(Number),
             data: expect.objectContaining({
               customer: expect.any(String),
               description: expect.any(String),
@@ -218,9 +225,8 @@ describe('ProjectsService', () => {
               softwares: expect.arrayContaining([expect.any(String)]),
               start_date: expect.any(String),
               thumbnail: expect.any(String),
+              category: expect.any(String),
             }),
-            message: expect.any(String),
-            status: expect.any(Number),
           }),
         );
       });
@@ -240,6 +246,7 @@ describe('ProjectsService', () => {
         thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       };
 
       const createResponse = await request(app.getHttpServer())
@@ -279,6 +286,7 @@ describe('ProjectsService', () => {
         thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       };
 
       const createResponse = await request(app.getHttpServer())
@@ -337,6 +345,7 @@ describe('ProjectsService', () => {
         ],
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       };
 
       const fileName = 'mock-image.jpg';
@@ -411,6 +420,7 @@ describe('ProjectsService', () => {
         ],
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       };
 
       const fileName = 'mock-video.mp4';
@@ -484,6 +494,7 @@ describe('ProjectsService', () => {
           thumbnail: 'https://example.com/image.png',
           start_date: new Date('2023-01-01'),
           end_date: new Date('2023-06-30'),
+          category: Category.MOVIE,
         };
 
         const createResponse = await request(app.getHttpServer())
@@ -536,6 +547,7 @@ describe('ProjectsService', () => {
             thumbnail: 'https://example.com/image.png',
             start_date: new Date('2023-01-01'),
             end_date: new Date('2023-06-30'),
+            category: Category.MOVIE,
           },
           {
             name: 'Project 2',
@@ -545,6 +557,7 @@ describe('ProjectsService', () => {
             thumbnail: 'https://example.com/image.png',
             start_date: new Date('2023-01-01'),
             end_date: new Date('2023-06-30'),
+            category: Category.GAME,
           },
         ];
 
@@ -608,6 +621,7 @@ describe('ProjectsService', () => {
           thumbnail: 'https://example.com/image.png',
           start_date: new Date('2023-01-01'),
           end_date: new Date('2023-06-30'),
+          category: Category.MOVIE,
         };
 
         const createResponse = await request(app.getHttpServer())
@@ -660,6 +674,7 @@ describe('ProjectsService', () => {
             thumbnail: 'https://example.com/image.png',
             start_date: new Date('2023-01-01'),
             end_date: new Date('2023-06-30'),
+            category: Category.MOVIE,
           },
           {
             name: 'Project 2',
@@ -669,6 +684,7 @@ describe('ProjectsService', () => {
             thumbnail: 'https://example.com/image.png',
             start_date: new Date('2023-01-01'),
             end_date: new Date('2023-06-30'),
+            category: Category.GAME,
           },
         ];
 
@@ -735,6 +751,7 @@ describe('ProjectsService', () => {
         thumbnail: 'https://example.com/image.png',
         start_date: new Date('2023-01-01'),
         end_date: new Date('2023-06-30'),
+        category: Category.MOVIE,
       };
 
       const createResponse = await request(app.getHttpServer())
@@ -793,6 +810,7 @@ describe('ProjectsService', () => {
           thumbnail: 'https://example.com/image.png',
           start_date: new Date('2023-01-01'),
           end_date: new Date('2023-06-30'),
+          category: Category.MOVIE,
         },
         {
           name: 'Project 2',
@@ -802,6 +820,7 @@ describe('ProjectsService', () => {
           thumbnail: 'https://example.com/image.png',
           start_date: new Date('2023-02-01'),
           end_date: new Date('2023-07-31'),
+          category: Category.GAME,
         },
         {
           name: 'Project 3',
@@ -811,6 +830,7 @@ describe('ProjectsService', () => {
           thumbnail: 'https://example.com/image.png',
           start_date: new Date('2023-03-01'),
           end_date: new Date('2023-08-31'),
+          category: Category.OTHER,
         },
       ];
 
@@ -866,6 +886,7 @@ describe('ProjectsService', () => {
       thumbnail: 'https://example.com/image.png',
       start_date: new Date('2023-01-01'),
       end_date: new Date('2023-06-30'),
+      category: Category.MOVIE,
     };
 
     const createResponse = await request(app.getHttpServer())

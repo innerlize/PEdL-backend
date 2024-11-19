@@ -9,6 +9,7 @@ import { NestjsFormDataModule } from 'nestjs-form-data';
 import { UpdateProjectOrderDto } from '../../application/dtos/update-project-order.dto';
 import { AppNames } from '../../../../common/domain/app-names.enum';
 import { UpdateProjectVisibilityParams } from '../../application/dtos/update-project-visibility.params';
+import { Category } from '../../domain/interfaces/category.enum';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -74,6 +75,7 @@ describe('ProjectsController', () => {
           pedl: false,
           cofcof: false,
         },
+        category: Category.MOVIE,
       },
     ];
 
@@ -108,6 +110,7 @@ describe('ProjectsController', () => {
         pedl: false,
         cofcof: false,
       },
+      category: Category.MOVIE,
     };
 
     jest.spyOn(service, 'getProject').mockResolvedValue(result);
@@ -126,6 +129,7 @@ describe('ProjectsController', () => {
       thumbnail: 'https://example.com/image.png',
       start_date: new Date('2024-06-17'),
       end_date: new Date('2024-12-31'),
+      category: Category.MOVIE,
     };
 
     const result = {
