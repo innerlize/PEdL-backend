@@ -4,10 +4,12 @@ import {
   IsDate,
   ValidateNested,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LinkDto } from '../../../../common/application/dtos/link.dto';
 import { IsFiles, MemoryStoredFile } from 'nestjs-form-data';
+import { Category } from '../../domain/interfaces/category.enum';
 
 export class UpdateProjectDto {
   @IsOptional()
@@ -27,6 +29,7 @@ export class UpdateProjectDto {
   @IsString({ each: true })
   softwares?: string[];
 
+  @IsOptional()
   @IsString()
   thumbnail?: string;
 
@@ -64,4 +67,8 @@ export class UpdateProjectDto {
   @ValidateNested({ each: true })
   @Type(() => LinkDto)
   links?: LinkDto[];
+
+  @IsOptional()
+  @IsEnum(Category)
+  category?: Category;
 }
