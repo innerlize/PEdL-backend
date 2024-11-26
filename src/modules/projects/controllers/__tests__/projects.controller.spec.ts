@@ -6,6 +6,9 @@ import { UpdateProjectDto } from '../../application/dtos/update-project.dto';
 import { Project } from '../../domain/interfaces/project.interface';
 import { AuthGuard } from '../../../../common/application/guards/auth.guard';
 import { NestjsFormDataModule } from 'nestjs-form-data';
+import { UpdateProjectOrderDto } from '../../application/dtos/update-project-order.dto';
+import { AppNames } from '../../../../common/domain/app-names.enum';
+import { UpdateProjectVisibilityParams } from '../../application/dtos/update-project-visibility.params';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -23,6 +26,8 @@ describe('ProjectsController', () => {
             getProject: jest.fn(),
             createProject: jest.fn(),
             updateProject: jest.fn(),
+            updateProjectOrder: jest.fn(),
+            updateProjectVisibility: jest.fn(),
             deleteProject: jest.fn(),
           },
         },
@@ -65,6 +70,10 @@ describe('ProjectsController', () => {
           pedl: 1,
           cofcof: 1,
         },
+        visibility: {
+          pedl: false,
+          cofcof: false,
+        },
       },
     ];
 
@@ -95,6 +104,10 @@ describe('ProjectsController', () => {
         pedl: 1,
         cofcof: 1,
       },
+      visibility: {
+        pedl: false,
+        cofcof: false,
+      },
     };
 
     jest.spyOn(service, 'getProject').mockResolvedValue(result);
@@ -103,6 +116,8 @@ describe('ProjectsController', () => {
   });
 
   it('should create a new project', async () => {
+    const id = '1';
+
     const createProjectDto: CreateProjectDto = {
       name: 'Project 1',
       customer: 'Customer A',
@@ -116,7 +131,12 @@ describe('ProjectsController', () => {
     const result = {
       message: 'Project successfully created!',
       status: 201,
-      data: createProjectDto,
+      data: {
+        ...createProjectDto,
+        id,
+        order: { pedl: 1, cofcof: 1 },
+        visibility: { pedl: false, cofcof: false },
+      },
     };
 
     jest.spyOn(service, 'createProject').mockResolvedValue(result);
@@ -138,6 +158,44 @@ describe('ProjectsController', () => {
     jest.spyOn(service, 'updateProject').mockResolvedValue(result);
 
     expect(await controller.updateProject(id, updateProjectDto)).toBe(result);
+  });
+
+  it('should update the order of a project', async () => {
+    const id = '1';
+
+    const updateProjectOrderDto: UpdateProjectOrderDto = {
+      newOrder: 2,
+      app: AppNames.PEDL,
+    };
+
+    const result = {
+      message: `Project order updated successfully!`,
+      status: 200,
+    };
+
+    jest.spyOn(service, 'updateProjectOrder').mockResolvedValue(result);
+
+    expect(await controller.updateProjectOrder(id, updateProjectOrderDto)).toBe(
+      result,
+    );
+  });
+
+  it('should update the visibility of a project', async () => {
+    const updateProjectVisibilityParams: UpdateProjectVisibilityParams = {
+      id: '1',
+      app: AppNames.PEDL,
+    };
+
+    const result = {
+      message: `Project visibility successfully updated!`,
+      status: 200,
+    };
+
+    jest.spyOn(service, 'updateProjectVisibility').mockResolvedValue(result);
+
+    expect(
+      await controller.updateProjectVisibility(updateProjectVisibilityParams),
+    ).toBe(result);
   });
 
   it('should delete a project', async () => {

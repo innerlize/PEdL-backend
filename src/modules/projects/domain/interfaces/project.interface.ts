@@ -3,6 +3,7 @@ import { Link } from '../../../../common/domain/link.interface';
 import { Timestamp } from '../../../../common/domain/timestamp.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectOrderByApp } from './project-order-by-app.interface';
+import { ProjectVisibilityByApp } from './project-visibility-by-app.interface';
 
 export class Project {
   @ApiProperty()
@@ -37,4 +38,7 @@ export class Project {
 
   @ApiProperty()
   order: ProjectOrderByApp;
+
+  @ApiProperty()
+  visibility: ProjectVisibilityByApp;
 }

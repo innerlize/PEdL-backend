@@ -17,6 +17,7 @@ import {
   mapCreateProjectDtoToProject,
   mapUpdateProjectDtoToProject,
 } from '../mappers/from-dto-to-project.mapper';
+import { AppNames } from '../../../../common/domain/app-names.enum';
 
 @Injectable()
 export class ProjectsService {
@@ -86,7 +87,7 @@ export class ProjectsService {
 
       const projectDtoMapper: Omit<
         Project,
-        'id' | 'start_date' | 'end_date' | 'order' | 'media'
+        'id' | 'start_date' | 'end_date' | 'order' | 'media' | 'visibility'
       > = mapCreateProjectDtoToProject(createProjectDto);
 
       const projectDtoWithInitialOrder =
@@ -97,7 +98,10 @@ export class ProjectsService {
 
       const projectRef = await this.databaseRepository.create(
         this.collectionName,
-        { ...projectDtoWithInitialOrder },
+        {
+          ...projectDtoWithInitialOrder,
+          visibility: { pedl: false, cofcof: false },
+        },
       );
 
       const storageImagesDirectoryPath = `projects/${projectRef.id}/media/images`;
@@ -140,10 +144,16 @@ export class ProjectsService {
         updatedProjectData,
       );
 
-      return this.createResponse('Project successfully created!', 201, {
-        id: projectRef.id,
-        ...updatedProjectData,
-      });
+      const finalProject = await this.databaseRepository.findById(
+        this.collectionName,
+        projectRef.id,
+      );
+
+      return this.createResponse(
+        'Project successfully created!',
+        201,
+        finalProject,
+      );
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -257,7 +267,27 @@ export class ProjectsService {
       app,
     );
 
-    return this.createResponse(`Project order updated successfully!`, 200);
+    return this.createResponse(`Project order successfully updated!`, 200);
+  }
+
+  async updateProjectVisibility(
+    id: string,
+    app: AppNames,
+  ): Promise<CustomResponse> {
+    const project = await this.databaseRepository.findById(
+      this.collectionName,
+      id,
+    );
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const updatedVisibility = !project.visibility?.[app];
+
+    await this.databaseRepository.update(this.collectionName, id, {
+      [`visibility.${app}`]: updatedVisibility,
+    });
+
+    return this.createResponse(`Project visibility successfully updated`, 200);
   }
 
   async deleteProject(id: string): Promise<CustomResponse> {
