@@ -1,15 +1,14 @@
 import { Media } from './media.interface';
 import { Link } from '../../../../common/domain/link.interface';
-import { Timestamp } from '../../../../common/domain/timestamp.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectOrderByApp } from './project-order-by-app.interface';
-import { ProjectVisibilityByApp } from './project-visibility-by-app.interface';
-import { Category } from './category.enum';
+import { Category } from '../enums/category.enum';
+import { ProjectThumbnailByApp } from '@modules/projects/domain/interfaces/project-thumbnail-by-app.interface';
+import { Timeframe } from '@modules/projects/domain/interfaces/timeframe.interface';
+import { BaseModel } from '@common/domain/base-model.interface';
+import { ProjectVisibilityByApp } from '@common/domain/project-visibility-by-app.interface';
 
-export class Project {
-  @ApiProperty()
-  id: string;
-
+export class Project extends BaseModel {
   @ApiProperty()
   name: string;
 
@@ -22,27 +21,24 @@ export class Project {
   @ApiProperty()
   softwares: string[];
 
-  @ApiProperty()
-  thumbnail: string;
+  @ApiPropertyOptional()
+  thumbnails?: ProjectThumbnailByApp;
 
   @ApiPropertyOptional()
   media?: Media;
 
-  @ApiProperty()
-  start_date: Timestamp;
-
-  @ApiProperty()
-  end_date: Timestamp;
+  @ApiPropertyOptional()
+  timeframe?: Timeframe;
 
   @ApiPropertyOptional()
   links?: Link[];
+
+  @ApiProperty()
+  category: Category;
 
   @ApiProperty()
   order: ProjectOrderByApp;
 
   @ApiProperty()
   visibility: ProjectVisibilityByApp;
-
-  @ApiProperty()
-  category: Category;
 }

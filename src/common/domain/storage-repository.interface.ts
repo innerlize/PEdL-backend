@@ -1,12 +1,9 @@
-import { MemoryStoredFile } from 'nestjs-form-data';
-
 export interface StorageRepository {
-  uploadFiles(mediaType: any, files: MemoryStoredFile[]): Promise<string[]>;
-  renameFilesFolder(
-    rootFolder: string,
-    currentObjectFolderName: string,
-    newObjectFolderName: string,
-  ): Promise<void>;
+  uploadFiles(
+    storagePath: string,
+    files: Express.Multer.File[],
+    customMetadata?: Record<string, string>,
+  ): Promise<string[]>;
   deleteFile(fileUrl: string): Promise<void>;
   deleteAllFilesFromFolder(
     rootFolder: string,

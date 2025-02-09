@@ -1,4 +1,4 @@
 export interface Media {
-  images?: string[];
-  videos?: string[];
+  images?: { url: string; visibility: { pedl: boolean; cofcof: boolean } }[];
+  videos?: { url: string; visibility: { pedl: boolean; cofcof: boolean } }[];
 }

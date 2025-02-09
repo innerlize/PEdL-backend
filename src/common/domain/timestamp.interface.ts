@@ -1,4 +1,3 @@
-export interface Timestamp {
-  seconds: number;
-  nanoseconds: number;
-}
+import { firestore } from 'firebase-admin';
+
+export type Timestamp = Pick<firestore.Timestamp, 'seconds' | 'nanoseconds'>;
