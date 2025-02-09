@@ -73,6 +73,26 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
     }
   }
 
+  async findOrderedByField(
+    collectionName: string,
+    fieldName: string,
+    order: 'asc' | 'desc',
+    limit: number,
+  ): Promise<T[]> {
+    const querySnapshot = await this.firestore
+      .collection(collectionName)
+      .orderBy(fieldName, order)
+      .limit(limit)
+      .get();
+
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      created_at: doc.createTime,
+      updated_at: doc.updateTime,
+    })) as T[];
+  }
+
   async getDocumentReference(
     collectionName: string,
     id: string,
@@ -82,10 +102,75 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
       .doc(id)) as admin.firestore.DocumentReference<T>;
   }
 
-  async getCollectionReference(
+  async getSubcollectionData(
     collectionName: string,
-  ): Promise<admin.firestore.CollectionReference> {
-    return this.firestore.collection(collectionName);
+    parentId: string,
+    subcollectionName: string,
+  ): Promise<any[]> {
+    const subcollectionRef = this.firestore
+      .collection(collectionName)
+      .doc(parentId)
+      .collection(subcollectionName);
+
+    const querySnapshot = await subcollectionRef.get();
+
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      created_at: doc.createTime,
+      updated_at: doc.updateTime,
+    }));
+  }
+
+  async getDocumentDataFromSubcollectionById(
+    collectionName: string,
+    parentId: string,
+    subcollectionName: string,
+    documentId: string,
+  ): Promise<any> {
+    const subcollectionDocRef = this.firestore
+      .collection(collectionName)
+      .doc(parentId)
+      .collection(subcollectionName)
+      .doc(documentId);
+    const subcollectionDoc = await subcollectionDocRef.get();
+
+    if (!subcollectionDoc.exists) {
+      throw new NotFoundException(
+        `Subcollection document with id "${documentId}" not found`,
+      );
+    }
+
+    return {
+      id: subcollectionDoc.id,
+      ...subcollectionDoc.data(),
+      created_at: subcollectionDoc.createTime,
+      updated_at: subcollectionDoc.updateTime,
+    };
+  }
+
+  async documentExistsInSubcollection(
+    collectionName: string,
+    parentId: string,
+    subcollectionName: string,
+    query: Partial<Record<string, any>>,
+  ): Promise<boolean> {
+    try {
+      const subcollectionRef = this.firestore
+        .collection(collectionName)
+        .doc(parentId)
+        .collection(subcollectionName);
+
+      const querySnapshot = await subcollectionRef
+        .where(Object.keys(query)[0], '==', Object.values(query)[0])
+        .get();
+
+      return !querySnapshot.empty;
+    } catch (e) {
+      throw new BadRequestException(
+        `Error checking document existence in subcollection: ${e.message}`,
+      );
+    }
   }
 
   async create(collectionName: string, data: any): Promise<T> {
@@ -101,6 +186,29 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
       } as T;
     } catch (e) {
       throw new BadRequestException('Error creating document: ' + e.message);
+    }
+  }
+
+  async createBatch(): Promise<admin.firestore.WriteBatch> {
+    return this.firestore.batch();
+  }
+
+  async addToSubcollection(
+    collectionName: string,
+    parentId: string,
+    subcollectionName: string,
+    data: any,
+  ): Promise<void> {
+    try {
+      await this.firestore
+        .collection(collectionName)
+        .doc(parentId)
+        .collection(subcollectionName)
+        .add(data);
+    } catch (e) {
+      throw new BadRequestException(
+        `Error adding document to subcollection: ${e.message}`,
+      );
     }
   }
 
@@ -128,26 +236,24 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
     }
   }
 
-  async appendMediaUrls(
+  async updateArrayField(
     collectionName: string,
     id: string,
-    mediaType: 'images' | 'videos',
-    urls: string[],
+    field: string,
+    value: any,
+    operation: 'add' | 'remove',
   ): Promise<void> {
-    try {
-      const docRef = this.firestore.collection(collectionName).doc(id);
-      const doc = await docRef.get();
+    const fieldValue =
+      operation === 'add'
+        ? admin.firestore.FieldValue.arrayUnion(value)
+        : admin.firestore.FieldValue.arrayRemove(value);
 
-      if (!doc.exists) {
-        throw new NotFoundException(`Document with id "${id}" not found`);
-      }
-
-      await docRef.update({
-        [`media.${mediaType}`]: admin.firestore.FieldValue.arrayUnion(...urls),
+    await this.firestore
+      .collection(collectionName)
+      .doc(id)
+      .update({
+        [field]: fieldValue,
       });
-    } catch (e) {
-      throw new BadRequestException('Error updating document: ' + e.message);
-    }
   }
 
   async delete(collectionName: string, id: string): Promise<void> {
@@ -159,13 +265,42 @@ export class FirestoreRepository<T> implements DatabaseRepository<T> {
         throw new NotFoundException(`Document with id "${id}" not found`);
       }
 
-      await docRef.delete();
+      await this.firestore.recursiveDelete(docRef);
     } catch (e) {
       throw new BadRequestException('Error deleting document: ' + e.message);
     }
   }
 
-  async batch(): Promise<admin.firestore.WriteBatch> {
-    return this.firestore.batch();
+  async deleteFromSubcollection(
+    parentCollection: string,
+    parentId: string,
+    subcollectionName: string,
+    documentId: string,
+  ): Promise<void> {
+    try {
+      const docRef = this.firestore
+        .collection(parentCollection)
+        .doc(parentId)
+        .collection(subcollectionName)
+        .doc(documentId);
+
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw new NotFoundException(
+          `Document with id "${documentId}" not found in subcollection "${subcollectionName}" of document with id "${parentId}".`,
+        );
+      }
+
+      await docRef.delete();
+
+      console.log(
+        `Document with id "${documentId}" successfully deleted from subcollection "${subcollectionName}" of document with id "${parentId}".`,
+      );
+    } catch (e) {
+      throw new BadRequestException(
+        `Error deleting document from subcollection: ${e.message}`,
+      );
+    }
   }
 }
