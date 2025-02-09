@@ -1,12 +1,13 @@
-import { IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsEnum, IsNumber } from 'class-validator';
 import { AppNames } from '../../../../common/domain/app-names.enum';
 
 export class UpdateProjectOrderDto {
-  @IsNotEmpty()
+  @IsNumber()
+  currentOrder: number;
+
   @IsNumber()
   newOrder: number;
 
-  @IsNotEmpty()
   @IsEnum(AppNames)
   app: AppNames;
 }
