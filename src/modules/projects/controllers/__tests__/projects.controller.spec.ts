@@ -1,23 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProjectsController } from '../projects.controller';
-import { ProjectsService } from '../../application/services/projects.service';
-import { CreateProjectDto } from '../../application/dtos/create-project.dto';
-import { UpdateProjectDto } from '../../application/dtos/update-project.dto';
-import { Project } from '../../domain/interfaces/project.interface';
-import { AuthGuard } from '../../../../common/application/guards/auth.guard';
-import { NestjsFormDataModule } from 'nestjs-form-data';
-import { UpdateProjectOrderDto } from '../../application/dtos/update-project-order.dto';
-import { AppNames } from '../../../../common/domain/app-names.enum';
-import { UpdateProjectVisibilityParams } from '../../application/dtos/update-project-visibility.params';
-import { Category } from '../../domain/interfaces/category.enum';
+import { AuthGuard } from '@common/application/guards/auth.guard';
+import { CustomResponse } from '@common/domain/custom-response.interface';
+import { CreateProjectDto } from '@modules/projects/application/dtos/create-project.dto';
+import { UpdateProjectBasicInfoDto } from '@modules/projects/application/dtos/update-project-info.dto';
+import { UpdateProjectOrderDto } from '@modules/projects/application/dtos/update-project-order.dto';
+import { ProjectsMediaService } from '@modules/projects/application/services/projects-media.service';
+import { ProjectsOrderService } from '@modules/projects/application/services/projects-order.service';
+import { ProjectsService } from '@modules/projects/application/services/projects.service';
+import { generateRandomProjects } from '@modules/projects/controllers/__tests__/utils/generate-random-projects';
+import {
+  generateRandomCreateProjectDtos,
+  generateRandomUpdateProjectArrayFieldDtos,
+  generateRandomUpdateProjectBasicInfoDtos,
+  generateRandomUpdateProjectMediaDtos,
+  generateRandomUpdateProjectOrderDtos,
+  generateRandomUpdateProjectThumbnailsDtos,
+  generateRandomUpdateProjectVisibilityDtos,
+} from '@modules/projects/controllers/__tests__/utils/generate-random-projects.dto';
+import { ProjectsController } from '@modules/projects/controllers/projects.controller';
+import { Project } from '@modules/projects/domain/interfaces/project.interface';
+import { TestingModule, Test } from '@nestjs/testing';
+import { Timestamp } from '@google-cloud/firestore';
+import { UpdateProjectVisibilityParams } from '@modules/projects/application/dtos/update-project-visibility.params';
+import { UpdateProjectArrayFieldDto } from '@modules/projects/application/dtos/update-project-array-field.dto';
+import { UpdateProjectThumbnailsDto } from '@modules/projects/application/dtos/update-project-thumbnails.dto';
+import { UpdateProjectMediaDto } from '@modules/projects/application/dtos/update-project-media.dto';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
-  let service: ProjectsService;
+  let projectsService: ProjectsService;
+  let projectsOrderService: ProjectsOrderService;
+  let projectsMediaService: ProjectsMediaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [NestjsFormDataModule],
       controllers: [ProjectsController],
       providers: [
         {
@@ -26,10 +41,30 @@ describe('ProjectsController', () => {
             getAllProjects: jest.fn(),
             getProject: jest.fn(),
             createProject: jest.fn(),
-            updateProject: jest.fn(),
-            updateProjectOrder: jest.fn(),
+            updateProjectBasicInfo: jest.fn(),
+            updateProjectArrayField: jest.fn(),
+            updateProjectThumbnails: jest.fn(),
+            updateProjectMedia: jest.fn(),
             updateProjectVisibility: jest.fn(),
+            updateProjectOrder: jest.fn(),
             deleteProject: jest.fn(),
+            deleteFileFromProject: jest.fn(),
+          },
+        },
+        {
+          provide: ProjectsOrderService,
+          useValue: {
+            getHighestAvailableOrder: jest.fn(),
+            updateOrder: jest.fn(),
+            reorderAfterDelete: jest.fn(),
+          },
+        },
+        {
+          provide: ProjectsMediaService,
+          useValue: {
+            updateThumbnails: jest.fn(),
+            updateMedia: jest.fn(),
+            deleteFileFromProject: jest.fn(),
           },
         },
       ],
@@ -39,7 +74,11 @@ describe('ProjectsController', () => {
       .compile();
 
     controller = module.get<ProjectsController>(ProjectsController);
-    service = module.get<ProjectsService>(ProjectsService);
+    projectsService = module.get<ProjectsService>(ProjectsService);
+    projectsOrderService =
+      module.get<ProjectsOrderService>(ProjectsOrderService);
+    projectsMediaService =
+      module.get<ProjectsMediaService>(ProjectsMediaService);
   });
 
   afterEach(() => {
@@ -51,167 +90,312 @@ describe('ProjectsController', () => {
   });
 
   it('should return an array of projects', async () => {
-    const result: Project[] = [
-      {
-        id: '1',
-        name: 'Project 1',
-        customer: 'Customer A',
-        description: 'Project description',
-        softwares: ['Software A', 'Software B'],
-        thumbnail: 'https://example.com/image.png',
-        start_date: {
-          seconds: 1735689600,
-          nanoseconds: 0,
-        },
-        end_date: {
-          seconds: 1835689600,
-          nanoseconds: 0,
-        },
-        order: {
-          pedl: 1,
-          cofcof: 1,
-        },
-        visibility: {
-          pedl: false,
-          cofcof: false,
-        },
-        category: Category.MOVIE,
-      },
-    ];
+    const EXPECTED_RESULT_LENGTH = 2;
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
 
-    jest.spyOn(service, 'getAllProjects').mockResolvedValue(result);
+    const projects = generateRandomProjects({ quantity: 2 });
 
-    expect(await controller.getAllProjects()).toBe(result);
+    jest
+      .spyOn(projectsService, 'getAllProjects')
+      .mockResolvedValueOnce(projects);
+
+    const response = await controller.getAllProjects();
+
+    expect(response).toEqual(projects);
+    expect(projects).toHaveLength(EXPECTED_RESULT_LENGTH);
+    expect(projectsService.getAllProjects).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
   });
 
   it('should return a project by id', async () => {
-    const id = '1';
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
 
-    const result: Project = {
-      id: '1',
-      name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      thumbnail: 'https://example.com/image.png',
-      start_date: {
-        seconds: 1735689600,
-        nanoseconds: 0,
-      },
-      end_date: {
-        seconds: 1835689600,
-        nanoseconds: 0,
-      },
-      order: {
-        pedl: 1,
-        cofcof: 1,
-      },
-      visibility: {
-        pedl: false,
-        cofcof: false,
-      },
-      category: Category.MOVIE,
-    };
+    const project: Project = generateRandomProjects({ quantity: 1 })[0];
+    const { id } = project;
 
-    jest.spyOn(service, 'getProject').mockResolvedValue(result);
+    jest.spyOn(projectsService, 'getProject').mockResolvedValueOnce(project);
 
-    expect(await controller.getProject(id)).toBe(result);
+    const response = await controller.getProject(id);
+
+    expect(response).toEqual(project);
+    expect(projectsService.getProject).toHaveBeenCalledWith(id);
+    expect(projectsService.getProject).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
   });
 
   it('should create a new project', async () => {
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
+
     const id = '1';
+    const createProjectDto: CreateProjectDto = generateRandomCreateProjectDtos({
+      quantity: 1,
+    })[0];
 
-    const createProjectDto: CreateProjectDto = {
-      name: 'Project 1',
-      customer: 'Customer A',
-      description: 'Project description',
-      softwares: ['Software A', 'Software B'],
-      thumbnail: 'https://example.com/image.png',
-      start_date: new Date('2024-06-17'),
-      end_date: new Date('2024-12-31'),
-      category: Category.MOVIE,
-    };
-
-    const result = {
+    const mockResponse: CustomResponse = {
       message: 'Project successfully created!',
       status: 201,
       data: {
-        ...createProjectDto,
         id,
+        ...createProjectDto,
         order: { pedl: 1, cofcof: 1 },
         visibility: { pedl: false, cofcof: false },
       },
     };
 
-    jest.spyOn(service, 'createProject').mockResolvedValue(result);
+    jest
+      .spyOn(projectsService, 'createProject')
+      .mockResolvedValueOnce(mockResponse);
 
-    expect(await controller.createProject(createProjectDto)).toBe(result);
+    const response = await controller.createProject(createProjectDto);
+
+    expect(response).toEqual(mockResponse);
+    expect(projectsService.createProject).toHaveBeenCalledWith(
+      createProjectDto,
+    );
+    expect(projectsService.createProject).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
   });
 
-  it('should update an existing project', async () => {
-    const id = '1';
+  it('should update basic info of a project', async () => {
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
 
-    const updateProjectDto: UpdateProjectDto = { name: 'Updated Project' };
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
 
-    const result = {
-      message: `Project with id "${id}" successfully updated!`,
-      status: 200,
-      data: updateProjectDto,
+    const { id, ...restOfPreExistingProject } = preExistingProjects[1];
+
+    const updateProjectBasicInfoDto: UpdateProjectBasicInfoDto =
+      generateRandomUpdateProjectBasicInfoDtos({ quantity: 1 })[0];
+
+    const updatedProject: Project = {
+      id,
+      ...restOfPreExistingProject,
+      ...updateProjectBasicInfoDto,
+      timeframe: updateProjectBasicInfoDto.timeframe
+        ? {
+            start_date: Timestamp.fromDate(
+              updateProjectBasicInfoDto.timeframe.start_date,
+            ),
+            end_date: Timestamp.fromDate(
+              updateProjectBasicInfoDto.timeframe.end_date,
+            ),
+          }
+        : restOfPreExistingProject.timeframe,
     };
 
-    jest.spyOn(service, 'updateProject').mockResolvedValue(result);
+    const mockResponse = {
+      message: `Project successfully updated!`,
+      status: 200,
+      data: updatedProject,
+    };
 
-    expect(await controller.updateProject(id, updateProjectDto)).toBe(result);
+    jest
+      .spyOn(projectsService, 'updateProjectBasicInfo')
+      .mockResolvedValueOnce(mockResponse);
+
+    const response = await controller.updateProjectBasicInfo(
+      id,
+      updateProjectBasicInfoDto,
+    );
+
+    expect(response).toEqual(mockResponse);
+    expect(projectsService.updateProjectBasicInfo).toHaveBeenCalledWith(
+      id,
+      updateProjectBasicInfoDto,
+    );
+    expect(projectsService.updateProjectBasicInfo).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
+  });
+
+  it('should update an array field of a project', async () => {
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
+
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
+
+    const { id } = preExistingProjects[1];
+
+    const updateProjectArrayFieldDto: UpdateProjectArrayFieldDto =
+      generateRandomUpdateProjectArrayFieldDtos({
+        quantity: 1,
+      })[0];
+
+    jest
+      .spyOn(projectsService, 'updateProjectArrayField')
+      .mockResolvedValueOnce();
+
+    const response = await controller.updateProjectArrayField(
+      id,
+      updateProjectArrayFieldDto,
+    );
+
+    expect(response).toBeUndefined();
+    expect(projectsService.updateProjectArrayField).toHaveBeenCalledWith(
+      id,
+      updateProjectArrayFieldDto,
+    );
+    expect(projectsService.updateProjectArrayField).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
+  });
+
+  it('should update the thumbnails of a project', async () => {
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
+
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
+
+    const { id } = preExistingProjects[1];
+
+    const updateProjectThumbnailsDto: UpdateProjectThumbnailsDto =
+      generateRandomUpdateProjectThumbnailsDtos({ quantity: 1 })[0];
+
+    jest
+      .spyOn(projectsMediaService, 'updateThumbnails')
+      .mockResolvedValueOnce();
+
+    const response = await controller.updateProjectThumbnails(
+      id,
+      updateProjectThumbnailsDto,
+      {},
+    );
+
+    expect(response).toBeUndefined();
+    expect(projectsMediaService.updateThumbnails).toHaveBeenCalledWith(
+      id,
+      updateProjectThumbnailsDto,
+      {},
+    );
+    expect(projectsMediaService.updateThumbnails).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
+  });
+
+  it('should update the media of a project', async () => {
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
+
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
+
+    const { id } = preExistingProjects[1];
+
+    const { images, videos }: UpdateProjectMediaDto =
+      generateRandomUpdateProjectMediaDtos({ quantity: 1 })[0];
+
+    jest.spyOn(projectsMediaService, 'updateMedia').mockResolvedValueOnce();
+
+    const response = await controller.updateProjectMedia(
+      id,
+      { images, videos },
+      { images: [], videos: [] },
+    );
+
+    expect(response).toBeUndefined();
+    expect(projectsMediaService.updateMedia).toHaveBeenCalledWith(
+      id,
+      { images, videos },
+      { images: [], videos: [] },
+    );
+    expect(projectsMediaService.updateMedia).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
   });
 
   it('should update the order of a project', async () => {
-    const id = '1';
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
 
-    const updateProjectOrderDto: UpdateProjectOrderDto = {
-      newOrder: 2,
-      app: AppNames.PEDL,
-    };
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
 
-    const result = {
-      message: `Project order updated successfully!`,
-      status: 200,
-    };
+    const { id } = preExistingProjects[1];
 
-    jest.spyOn(service, 'updateProjectOrder').mockResolvedValue(result);
+    const { currentOrder, newOrder, app }: UpdateProjectOrderDto =
+      generateRandomUpdateProjectOrderDtos({
+        quantity: 1,
+      })[0];
 
-    expect(await controller.updateProjectOrder(id, updateProjectOrderDto)).toBe(
-      result,
+    jest.spyOn(projectsOrderService, 'updateOrder').mockResolvedValueOnce();
+
+    const response = await controller.updateProjectOrder(id, {
+      currentOrder,
+      newOrder,
+      app,
+    });
+
+    expect(response).toBeUndefined();
+    expect(projectsOrderService.updateOrder).toHaveBeenCalledWith(
+      id,
+      currentOrder,
+      newOrder,
+      app,
+    );
+    expect(projectsOrderService.updateOrder).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
     );
   });
 
   it('should update the visibility of a project', async () => {
-    const updateProjectVisibilityParams: UpdateProjectVisibilityParams = {
-      id: '1',
-      app: AppNames.PEDL,
-    };
+    const EXPECTED_SERVICE_CALL_COUNT = 1;
 
-    const result = {
-      message: `Project visibility successfully updated!`,
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
+
+    const { id: projectId } = preExistingProjects[1];
+
+    const { id: updatedProjectId, app }: UpdateProjectVisibilityParams =
+      generateRandomUpdateProjectVisibilityDtos({
+        quantity: 1,
+        metadata: { id: projectId },
+      })[0];
+
+    const mockResponse = {
+      message: 'Project visibility successfully updated',
       status: 200,
     };
 
-    jest.spyOn(service, 'updateProjectVisibility').mockResolvedValue(result);
+    jest
+      .spyOn(projectsService, 'updateProjectVisibility')
+      .mockResolvedValue(mockResponse);
 
-    expect(
-      await controller.updateProjectVisibility(updateProjectVisibilityParams),
-    ).toBe(result);
+    const response = await controller.updateProjectVisibility({
+      id: updatedProjectId,
+      app,
+    });
+
+    expect(response).toEqual(mockResponse);
+    expect(projectsService.updateProjectVisibility).toHaveBeenCalledWith(
+      updatedProjectId,
+      app,
+    );
+    expect(projectsService.updateProjectVisibility).toHaveBeenCalledTimes(
+      EXPECTED_SERVICE_CALL_COUNT,
+    );
   });
 
   it('should delete a project', async () => {
-    const id = '1';
+    const preExistingProjects = generateRandomProjects({ quantity: 2 });
 
-    const result = {
-      message: `Project with id "${id}" successfully deleted!`,
+    const { id } = preExistingProjects[1];
+
+    const mockResponse = {
+      message: `Project with id "${id}" and associated files successfully deleted. Remaining projects have been reordered.`,
       status: 200,
     };
 
-    jest.spyOn(service, 'deleteProject').mockResolvedValue(result);
+    jest
+      .spyOn(projectsService, 'deleteProject')
+      .mockResolvedValue(mockResponse);
 
-    expect(await controller.deleteProject(id)).toBe(result);
+    const response = await controller.deleteProject(id);
+
+    expect(response).toEqual(mockResponse);
+    expect(projectsService.deleteProject).toHaveBeenCalledWith(id);
+    expect(projectsService.deleteProject).toHaveBeenCalledTimes(1);
   });
+
+  // it('should delete a file from a project', async () => {
+  //   const projectId: string = '1';
+  //   const fileId: string = '1';
+  //   const fileType: 'image' | 'video' = 'image';
+
+  //   const mockResponse = { message: 'File successfully deleted', status: 200 };
+  // })
 });

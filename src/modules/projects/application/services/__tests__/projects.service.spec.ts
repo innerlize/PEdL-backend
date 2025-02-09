@@ -5,7 +5,7 @@ import { ProjectsController } from '../../../controllers/projects.controller';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../../../database/database.module';
 import { CreateProjectDto } from '../../dtos/create-project.dto';
-import { UpdateProjectDto } from '../../dtos/update-project.dto';
+import { UpdateProjectDto } from '../../dtos/update-project-info.dto';
 import {
   initializeTestEnvironment,
   RulesTestEnvironment,
@@ -22,7 +22,7 @@ import { AppNames } from '../../../../../common/domain/app-names.enum';
 import { StorageModule } from '../../../../storage/storage.module';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 import { UpdateProjectVisibilityParams } from '../../dtos/update-project-visibility.params';
-import { Category } from '../../../domain/interfaces/category.enum';
+import { Category } from '../../../domain/enums/category.enum';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
