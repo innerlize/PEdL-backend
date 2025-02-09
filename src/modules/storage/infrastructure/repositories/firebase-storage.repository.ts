@@ -1,8 +1,7 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { Bucket, GetFilesResponse } from '@google-cloud/storage';
+import { Bucket } from '@google-cloud/storage';
 import { StorageRepository } from '../../../../common/domain/storage-repository.interface';
-import { MemoryStoredFile } from 'nestjs-form-data';
 
 @Injectable()
 export class FirebaseStorageRepository implements StorageRepository {
@@ -16,29 +15,22 @@ export class FirebaseStorageRepository implements StorageRepository {
     this.bucket = this.storage.bucket();
   }
 
-  private generateFileLocation(mediaType: string, filename: string): string {
-    return `${mediaType}/${filename}`;
-  }
-
-  async getFile(fileUrl: string): Promise<string> {
-    const file = await this.bucket.file(fileUrl);
-
-    if (!file) {
-      throw new NotFoundException('File not found');
-    }
-
-    return file.publicUrl();
+  private generateFileLocation(storagePath: string, filename: string): string {
+    return `${storagePath}/${filename}`;
   }
 
   async uploadFiles(
-    mediaType: string,
-    files: MemoryStoredFile[],
-    generationMatchPrecondition?: number,
+    storagePath: string,
+    files: Express.Multer.File[],
+    customMetadata?: Record<string, string>,
   ): Promise<string[]> {
-    const filesUrls: string[] = [];
+    const uploadedFilesUrls: string[] = [];
 
     for (const file of files) {
-      const location = this.generateFileLocation(mediaType, file.originalName);
+      const location = this.generateFileLocation(
+        storagePath,
+        file.originalname,
+      );
       const fileName = location;
       const fileToUpload = this.bucket.file(fileName);
 
@@ -46,36 +38,16 @@ export class FirebaseStorageRepository implements StorageRepository {
         contentType: file.mimetype,
         metadata: {
           contentDisposition: 'inline',
-        },
-        preconditionOpts: {
-          ifGenerationMatch: generationMatchPrecondition,
+          customMetadata,
         },
       });
 
       await fileToUpload.makePublic();
 
-      filesUrls.push(fileToUpload.publicUrl());
+      uploadedFilesUrls.push(fileToUpload.publicUrl());
     }
 
-    return filesUrls;
-  }
-
-  async renameFilesFolder(
-    rootFolder: string,
-    currentObjectFolderName: string,
-    newObjectFolderName: string,
-  ): Promise<void> {
-    await this.bucket
-      .getFiles({ prefix: `${rootFolder}/${currentObjectFolderName}/` })
-      .then(async (response: GetFilesResponse) => {
-        for (const file of response[0]) {
-          const newFilePath = file.name.replace(
-            `${rootFolder}/${currentObjectFolderName}/`,
-            `${rootFolder}/${newObjectFolderName}/`,
-          );
-          await file.rename(newFilePath);
-        }
-      });
+    return uploadedFilesUrls;
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
