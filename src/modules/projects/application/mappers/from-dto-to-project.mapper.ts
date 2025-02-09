@@ -1,54 +1,58 @@
 import { Project } from '../../domain/interfaces/project.interface';
 import { CreateProjectDto } from '../dtos/create-project.dto';
-import { UpdateProjectDto } from '../dtos/update-project.dto';
+import { ProjectOrderByApp } from '@modules/projects/domain/interfaces/project-order-by-app.interface';
+import { AppNames } from '@common/domain/app-names.enum';
+import { ProjectVisibilityByApp } from '@common/domain/project-visibility-by-app.interface';
 
-interface MappedProject
+export interface MappedProject
   extends Omit<
     Project,
-    'id' | 'start_date' | 'end_date' | 'order' | 'visibility'
+    'id' | 'thumbnail' | 'media' | 'created_at' | 'updated_at' | 'timeframe'
   > {
-  start_date: Date;
-  end_date: Date;
+  timeframe?: {
+    start_date: Date;
+    end_date: Date;
+  };
 }
 
-export function mapCreateProjectDtoToProject(
+export const fromCreateProjectDtoToProject = (
   dto: CreateProjectDto,
-): MappedProject {
+  initialOrder: ProjectOrderByApp,
+): MappedProject => {
   const project: MappedProject = {
     name: dto.name,
     customer: dto.customer,
     description: dto.description,
-    thumbnail: dto.thumbnail,
-    softwares: dto.softwares || [],
-    media: {
-      images: dto.imagesUrls || [],
-      videos: dto.videosUrls || [],
-    },
-    start_date: dto.start_date,
-    end_date: dto.end_date,
-    links: dto.links || [],
+    softwares: dto.softwares,
+    timeframe: dto.timeframe,
+    links: dto.links,
     category: dto.category,
+    order: initialOrder,
+    visibility: setDefaultProjectVisibility(),
   };
 
   return project;
-}
+};
 
-export function mapUpdateProjectDtoToProject(
-  dto: UpdateProjectDto,
-): Partial<
-  Omit<Project, 'id' | 'start_date' | 'end_date' | 'order' | 'visibility'>
-> {
-  const project: Partial<
-    Omit<Project, 'id' | 'start_date' | 'end_date' | 'order' | 'visibility'>
-  > = {};
-
-  if (dto.name) project.name = dto.name;
-  if (dto.customer) project.customer = dto.customer;
-  if (dto.description) project.description = dto.description;
-  if (dto.thumbnail) project.thumbnail = dto.thumbnail;
-  if (dto.softwares) project.softwares = dto.softwares;
-  if (dto.links) project.links = dto.links;
-  if (dto.category) project.category = dto.category;
-
-  return project;
-}
+const setDefaultProjectVisibility = (): ProjectVisibilityByApp => ({
+  [AppNames.PEDL]: {
+    is_visible: false,
+    fields: {
+      customer: false,
+      description: false,
+      softwares: false,
+      timeframe: false,
+      links: false,
+    },
+  },
+  [AppNames.COFCOF]: {
+    is_visible: false,
+    fields: {
+      customer: false,
+      description: false,
+      softwares: false,
+      timeframe: false,
+      links: false,
+    },
+  },
+});
