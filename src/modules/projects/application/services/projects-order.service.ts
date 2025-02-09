@@ -1,169 +1,94 @@
-import {
-  Injectable,
-  Inject,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
-import { DatabaseRepository } from 'src/common/domain/database-repository.interface';
-import { ProjectEntity as Project } from '../../domain/entities/project.entity';
+import { ProjectOrderByApp } from '@modules/projects/domain/interfaces/project-order-by-app.interface';
+import { ProjectsOrderRepository } from '@modules/projects/infrastructure/projects-order.repository';
+import { Injectable, ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class ProjectsOrderService {
+  private readonly DEFAULT_ORDER_INCREMENT = 1;
+  private readonly MIN_ORDER_OFFSET = 1;
+
   constructor(
-    @Inject('DatabaseRepository')
-    private readonly databaseRepository: DatabaseRepository<Project>,
+    private readonly projectsOrderRepository: ProjectsOrderRepository,
   ) {}
 
-  private getHighestOrder(allProjects: Project[]): any {
+  async getHighestAvailableOrder(): Promise<ProjectOrderByApp> {
+    const highestOrder =
+      await this.projectsOrderRepository.getHighestOrderValues();
+
     return {
-      pedl: Math.max(...allProjects.map((p) => p.order.pedl), 0) + 1,
-      cofcof: Math.max(...allProjects.map((p) => p.order.cofcof), 0) + 1,
+      pedl: highestOrder.pedl + this.DEFAULT_ORDER_INCREMENT,
+      cofcof: highestOrder.cofcof + this.DEFAULT_ORDER_INCREMENT,
     };
   }
 
-  private async getProjectsToReorder(
-    collectionName: string,
-    deletedOrder: any,
-  ): Promise<Project[]> {
-    const [projectsToReorderPedl, projectsToReorderCofcof] = await Promise.all([
-      this.databaseRepository.findByQuery(collectionName, {
-        field: 'order.pedl',
-        operator: '>',
-        value: deletedOrder.pedl,
-      }),
-      this.databaseRepository.findByQuery(collectionName, {
-        field: 'order.cofcof',
-        operator: '>',
-        value: deletedOrder.cofcof,
-      }),
-    ]);
-    return [...projectsToReorderPedl, ...projectsToReorderCofcof];
-  }
-
-  private async reorderProjects(
-    collectionName: string,
-    projectsToReorder: Project[],
-    deletedOrder: any,
-  ) {
-    const batch = await this.databaseRepository.batch();
-
-    for (const project of projectsToReorder) {
-      const updatedOrder = {
-        pedl:
-          project.order.pedl > deletedOrder.pedl
-            ? project.order.pedl - 1
-            : project.order.pedl,
-        cofcof:
-          project.order.cofcof > deletedOrder.cofcof
-            ? project.order.cofcof - 1
-            : project.order.cofcof,
-      };
-
-      const projectRef = await this.databaseRepository.getDocumentReference(
-        collectionName,
-        project.id,
-      );
-
-      batch.update(projectRef, { order: updatedOrder });
-    }
-
-    await batch.commit();
-  }
-
-  private getSortedProjects(allProjects: Project[], app: string): Project[] {
-    return allProjects
-      .filter((p) => p.order[app])
-      .sort((a, b) => a.order[app] - b.order[app]);
-  }
-
-  private async updateProjectsOrder(
-    batch: any,
-    projectsInApp: Project[],
+  async updateOrder(
+    projectId: string,
     currentOrder: number,
     newOrder: number,
     app: string,
   ): Promise<void> {
-    for (const project of projectsInApp) {
-      if (
-        (newOrder > currentOrder &&
-          project.order[app] <= newOrder &&
-          project.order[app] > currentOrder) ||
-        (newOrder < currentOrder &&
-          project.order[app] >= newOrder &&
-          project.order[app] < currentOrder)
-      ) {
-        const updatedOrder =
-          project.order[app] + (newOrder < currentOrder ? 1 : -1);
-        const projectRef = await this.databaseRepository.getDocumentReference(
-          'projects',
-          project.id,
-        );
-        batch.update(projectRef, { [`order.${app}`]: updatedOrder });
-      }
-    }
-  }
-
-  async assignInitialOrder(
-    collectionName: string,
-    createProjectDto: any,
-  ): Promise<any> {
-    const allProjects = await this.databaseRepository.findAll(collectionName);
-    const highestOrder = this.getHighestOrder(allProjects);
-
-    return {
-      ...createProjectDto,
-      order: highestOrder,
-    };
-  }
-
-  async reorderAfterDelete(
-    collectionName: string,
-    deletedOrder: any,
-  ): Promise<void> {
-    const projectsToReorder = await this.getProjectsToReorder(
-      collectionName,
-      deletedOrder,
-    );
-    await this.reorderProjects(collectionName, projectsToReorder, deletedOrder);
-  }
-
-  async updateOrder(
-    collectionName: string,
-    projectId: string,
-    newOrder: number,
-    app: string,
-  ): Promise<void> {
-    const allProjects = await this.databaseRepository.findAll(collectionName);
-    const projectToUpdate = allProjects.find((p) => p.id === projectId);
-
-    if (!projectToUpdate)
-      throw new NotFoundException(`Project with id "${projectId}" not found`);
-
-    const currentOrder = projectToUpdate.order[app];
     if (currentOrder === newOrder) {
       throw new ConflictException(
         `Project already has order "${newOrder}" in app "${app}"`,
       );
     }
 
-    const batch = await this.databaseRepository.batch();
-    const projectsInApp = this.getSortedProjects(allProjects, app);
+    const allProjects =
+      await this.projectsOrderRepository.findProjectsWithOrderGreaterThan(
+        app,
+        Math.min(currentOrder, newOrder) - this.MIN_ORDER_OFFSET,
+      );
 
-    await this.updateProjectsOrder(
-      batch,
-      projectsInApp,
-      currentOrder,
-      newOrder,
-      app,
-    );
-    projectToUpdate.order[app] = newOrder;
+    const projectsToUpdate = allProjects.map((project) => ({
+      id: project.id,
+      order: {
+        ...project.order,
+        [app]:
+          project.order[app] +
+          (newOrder < currentOrder
+            ? this.MIN_ORDER_OFFSET
+            : -this.MIN_ORDER_OFFSET),
+      },
+    }));
 
-    const projectRef = await this.databaseRepository.getDocumentReference(
-      collectionName,
+    await this.projectsOrderRepository.batchUpdateProjects(projectsToUpdate);
+    await this.projectsOrderRepository.updateProjectOrder(
       projectId,
+      app,
+      newOrder,
     );
-    batch.update(projectRef, { [`order.${app}`]: newOrder });
+  }
 
-    await batch.commit();
+  async reorderAfterDelete(deletedOrder: ProjectOrderByApp): Promise<void> {
+    const [projectsPedl, projectsCofcof] = await Promise.all([
+      this.projectsOrderRepository.findProjectsWithOrderGreaterThan(
+        'pedl',
+        deletedOrder.pedl,
+      ),
+      this.projectsOrderRepository.findProjectsWithOrderGreaterThan(
+        'cofcof',
+        deletedOrder.cofcof,
+      ),
+    ]);
+
+    const projectsToUpdate = [...projectsPedl, ...projectsCofcof].map(
+      (project) => {
+        return {
+          id: project.id,
+          order: {
+            pedl:
+              project.order.pedl > deletedOrder.pedl
+                ? project.order.pedl - this.MIN_ORDER_OFFSET
+                : project.order.pedl,
+            cofcof:
+              project.order.cofcof > deletedOrder.cofcof
+                ? project.order.cofcof - this.MIN_ORDER_OFFSET
+                : project.order.cofcof,
+          },
+        };
+      },
+    );
+
+    await this.projectsOrderRepository.batchUpdateProjects(projectsToUpdate);
   }
 }
